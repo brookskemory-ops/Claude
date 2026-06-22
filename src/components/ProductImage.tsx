@@ -49,11 +49,6 @@ export default function ProductImage({ imageKey, name, className }: Props) {
       preserveAspectRatio="xMidYMid meet"
     >
       <rect width="200" height="220" className="fill-paper-muted" />
-      {/* faint molecular accent */}
-      <g className="text-line" opacity="0.7">
-        <path d="M150 36 l16 9 v18 l-16 9 -16 -9 v-18 z" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      </g>
-      <circle cx="150" cy="54" r="3" className="fill-accent" />
       {shape}
     </svg>
   );

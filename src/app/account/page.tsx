@@ -58,7 +58,7 @@ export default async function AccountPage() {
           </h1>
           <p className="mt-1 text-sm text-ink-muted">{user.email}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href="/account/tracking" className="btn-outline btn-sm">
             Track Shipments
           </Link>

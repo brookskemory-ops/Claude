@@ -3,9 +3,6 @@ import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
 import { LogoMonogram } from "@/components/Logo";
 import {
-  MoleculeLattice,
-  PeptideChain,
-  Helix,
   IconPurity,
   IconTested,
   IconCOA,
@@ -23,22 +20,21 @@ export default async function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-ink text-paper">
-        <MoleculeLattice className="pointer-events-none absolute inset-0 text-paper/[0.06]" />
-        <div className="container-site relative grid items-center gap-10 py-20 lg:grid-cols-2 lg:py-28">
+      <section className="bg-ink text-paper">
+        <div className="container-site grid items-center gap-12 py-16 lg:grid-cols-2 lg:py-28">
           <div className="animate-fade-up">
             <p className="eyebrow text-paper/60">Research Grade Peptides</p>
-            <h1 className="mt-5 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
+            <h1 className="mt-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
               Purity you
               <br />
-              can <span className="text-accent">verify.</span>
+              can verify.
             </h1>
             <p className="mt-6 max-w-md text-paper/70">
               Axevia supplies high-purity, third-party tested research peptides to qualified
               laboratories and research professionals. Every lot, fully documented.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/shop" className="btn-accent">
+              <Link href="/shop" className="bg-paper px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:bg-paper/90">
                 Browse Catalog
               </Link>
               <Link href="/about" className="border border-paper/40 px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-paper hover:text-ink">
@@ -50,10 +46,8 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="flex justify-center">
-            <div className="relative flex aspect-square w-full max-w-md items-center justify-center border border-paper/20">
-              <Helix className="absolute right-6 top-1/2 h-3/4 -translate-y-1/2 text-paper/70" />
-              <LogoMonogram size={150} invert />
-              <PeptideChain className="absolute bottom-6 left-1/2 w-3/4 -translate-x-1/2 text-paper" />
+            <div className="flex aspect-square w-full max-w-sm items-center justify-center border border-paper/20 lg:max-w-md">
+              <LogoMonogram size={160} invert />
             </div>
           </div>
         </div>
@@ -126,7 +120,7 @@ export default async function HomePage() {
               { k: "-20°C", v: "Lyophilized storage" },
             ].map((s) => (
               <div key={s.v} className="bg-paper-soft p-8">
-                <p className="text-2xl font-bold text-accent">{s.k}</p>
+                <p className="text-2xl font-bold">{s.k}</p>
                 <p className="mt-1 text-sm text-ink-muted">{s.v}</p>
               </div>
             ))}
@@ -136,18 +130,15 @@ export default async function HomePage() {
 
       {/* Compliance callout */}
       <section className="container-site py-20">
-        <div className="relative overflow-hidden border border-ink bg-ink p-10 text-center text-paper">
-          <MoleculeLattice className="pointer-events-none absolute inset-0 text-paper/[0.06]" />
-          <div className="relative">
-            <h2 className="text-2xl font-bold tracking-tight">For research professionals</h2>
-            <p className="mx-auto mt-3 max-w-xl text-paper/70">
-              Axevia products are sold strictly for laboratory and in-vitro research. By purchasing,
-              you confirm you are a qualified researcher and agree to our Research-Use-Only terms.
-            </p>
-            <Link href="/research-use-policy" className="btn-accent mt-7">
-              Research-Use Policy
-            </Link>
-          </div>
+        <div className="border border-ink p-10 text-center">
+          <h2 className="text-2xl font-bold tracking-tight">For research professionals</h2>
+          <p className="mx-auto mt-3 max-w-xl text-ink-muted">
+            Axevia products are sold strictly for laboratory and in-vitro research. By purchasing,
+            you confirm you are a qualified researcher and agree to our Research-Use-Only terms.
+          </p>
+          <Link href="/research-use-policy" className="btn-outline mt-7">
+            Research-Use Policy
+          </Link>
         </div>
       </section>
     </>

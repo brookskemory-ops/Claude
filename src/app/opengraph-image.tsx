@@ -50,8 +50,7 @@ export default function OpengraphImage() {
             lineHeight: 1.05,
           }}
         >
-          <span>Purity you can&nbsp;</span>
-          <span style={{ color: "#2563eb" }}>verify.</span>
+          <span>Purity you can verify.</span>
         </div>
         <div style={{ marginTop: 28, fontSize: 30, color: "rgba(255,255,255,0.7)" }}>
           High-purity, third-party tested research peptides.

@@ -21,9 +21,9 @@ const config: Config = {
         },
         line: "#e5e5e5",
         accent: {
-          DEFAULT: "#2563eb",
-          soft: "#1d4ed8",
-          tint: "#eff4ff",
+          DEFAULT: "#0a0a0a",
+          soft: "#171717",
+          tint: "#f1f1f1",
         },
       },
       fontFamily: {

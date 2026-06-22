@@ -213,7 +213,7 @@ export default function CheckoutForm({
     <div className="container-site py-12">
       <h1 className="text-3xl font-bold tracking-tight">Checkout</h1>
 
-      <div className="mt-8 flex items-center gap-2">
+      <div className="mt-8 flex flex-wrap items-center gap-y-2">
         {STEPS.map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <div className={`flex h-7 w-7 items-center justify-center text-xs font-bold ${i <= step ? "bg-ink text-paper" : "bg-paper-muted text-ink-muted"}`}>

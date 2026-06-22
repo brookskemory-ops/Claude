@@ -126,7 +126,7 @@ export default async function ProductPage({
             <dl className="mt-8 divide-y divide-line border-t border-line text-sm">
               {specs.map((s) => (
                 <div key={s.label} className="flex gap-4 py-3">
-                  <dt className="w-40 shrink-0 font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                  <dt className="w-28 shrink-0 font-semibold uppercase tracking-[0.12em] text-ink-muted sm:w-40">
                     {s.label}
                   </dt>
                   <dd className="text-ink-muted">{s.value}</dd>
