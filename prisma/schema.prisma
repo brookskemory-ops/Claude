@@ -19,6 +19,7 @@ model User {
   referralCode       String?              @unique
   referralsMade      Referral[]           @relation("referrer")
   referralReceived   Referral?            @relation("referee")
+  reviews            Review[]
   addresses          Address[]
   orders             Order[]
   resetTokens        PasswordResetToken[]
@@ -86,6 +87,7 @@ model Product {
   active    Boolean          @default(true)
   imageKey  String           @default("default")
   variants  ProductVariant[]
+  reviews   Review[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 }
@@ -168,6 +170,32 @@ model AuditLog {
   action     String
   detail     String   @default("")
   createdAt  DateTime @default(now())
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  authorName String
+  rating     Int
+  title      String   @default("")
+  body       String   @default("")
+  status     String   @default("PENDING") // PENDING | APPROVED | HIDDEN
+  verified   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model AbandonedCart {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  items      String // JSON snapshot of cart
+  total      Float
+  remindedAt DateTime?
+  recovered  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Referral {

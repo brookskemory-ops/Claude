@@ -197,6 +197,11 @@ export async function finalizeOrder(
     siteUrl: siteUrl(),
   });
 
+  // Mark any abandoned-cart reminder for this email as recovered.
+  await db.abandonedCart
+    .updateMany({ where: { email: order.email.toLowerCase() }, data: { recovered: true } })
+    .catch(() => {});
+
   // Alert admin about any variants that dropped to/below their low-stock threshold.
   const variantIds = order.items.map((i) => i.variantId).filter(Boolean) as string[];
   if (variantIds.length) {

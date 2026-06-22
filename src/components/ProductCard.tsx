@@ -1,16 +1,24 @@
 import Link from "next/link";
 import type { Product, ProductVariant } from "@prisma/client";
 import ProductImage from "@/components/ProductImage";
+import Stars from "@/components/Stars";
 import { formatPrice } from "@/lib/format";
 import { minEffectivePrice, anyOnSale, totalStock } from "@/lib/pricing";
 
-type ProductWithVariants = Product & { variants: ProductVariant[] };
+type ProductWithVariants = Product & {
+  variants: ProductVariant[];
+  reviews?: { rating: number }[];
+};
 
 export default function ProductCard({ product }: { product: ProductWithVariants }) {
   const variants = product.variants.filter((v) => v.active);
   const fromPrice = minEffectivePrice(variants);
   const onSale = anyOnSale(variants);
   const outOfStock = totalStock(variants) <= 0;
+  const reviews = product.reviews ?? [];
+  const avgRating = reviews.length
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : 0;
 
   return (
     <div className="group flex flex-col">
@@ -49,6 +57,12 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
           {product.form}
           {variants.length > 1 ? ` · ${variants.length} sizes` : ""}
         </p>
+        {reviews.length > 0 && (
+          <div className="mt-2 flex items-center gap-1.5">
+            <Stars rating={avgRating} size={12} />
+            <span className="text-[11px] text-ink-muted">({reviews.length})</span>
+          </div>
+        )}
         <div className="mt-3 flex items-baseline gap-1 text-sm">
           {variants.length > 1 && <span className="text-xs text-ink-muted">from</span>}
           <span className="font-semibold">{formatPrice(fromPrice)}</span>

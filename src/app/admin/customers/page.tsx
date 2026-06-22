@@ -1,12 +1,23 @@
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/format";
 import { toggleTaxExempt } from "../actions";
+import SortHeader from "../SortHeader";
 
-export default async function AdminCustomers() {
+export default async function AdminCustomers({
+  searchParams,
+}: {
+  searchParams: { sort?: string; dir?: string };
+}) {
+  const sort = searchParams.sort ?? "createdAt";
+  const dir: Prisma.SortOrder = searchParams.dir === "asc" ? "asc" : "desc";
+  const orderBy: Prisma.UserOrderByWithRelationInput =
+    sort === "name" ? { name: dir } : sort === "email" ? { email: dir } : { createdAt: dir };
+
   const customers = await db.user.findMany({
     where: { role: "CUSTOMER" },
     include: { _count: { select: { orders: true } } },
-    orderBy: { createdAt: "desc" },
+    orderBy,
   });
 
   return (
@@ -19,9 +30,9 @@ export default async function AdminCustomers() {
         <table className="w-full min-w-[640px] text-sm">
           <thead className="border-b border-line bg-paper-soft text-left">
             <tr className="text-[11px] uppercase tracking-[0.12em] text-ink-muted">
-              <th className="px-4 py-3 font-semibold">Name</th>
-              <th className="px-4 py-3 font-semibold">Email</th>
-              <th className="px-4 py-3 font-semibold">Joined</th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="Name" col="name" basePath="/admin/customers" sort={sort} dir={dir} /></th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="Email" col="email" basePath="/admin/customers" sort={sort} dir={dir} /></th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="Joined" col="createdAt" basePath="/admin/customers" sort={sort} dir={dir} /></th>
               <th className="px-4 py-3 font-semibold">Orders</th>
               <th className="px-4 py-3 font-semibold">Tax Exempt</th>
               <th className="px-4 py-3 text-right font-semibold">Exemption Cert</th>

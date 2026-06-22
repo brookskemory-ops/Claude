@@ -1,13 +1,28 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
 import { minEffectivePrice, totalStock } from "@/lib/pricing";
 import { deleteProduct } from "../actions";
+import SortHeader from "../SortHeader";
 
-export default async function AdminProducts() {
+export default async function AdminProducts({
+  searchParams,
+}: {
+  searchParams: { sort?: string; dir?: string };
+}) {
+  const sort = searchParams.sort ?? "createdAt";
+  const dir: Prisma.SortOrder = searchParams.dir === "asc" ? "asc" : "desc";
+  const orderBy: Prisma.ProductOrderByWithRelationInput =
+    sort === "name"
+      ? { name: dir }
+      : sort === "category"
+        ? { category: dir }
+        : { createdAt: dir };
+
   const products = await db.product.findMany({
     include: { variants: true },
-    orderBy: { createdAt: "desc" },
+    orderBy,
   });
 
   return (
@@ -23,8 +38,8 @@ export default async function AdminProducts() {
         <table className="w-full min-w-[680px] text-sm">
           <thead className="border-b border-line bg-paper-soft text-left">
             <tr className="text-[11px] uppercase tracking-[0.12em] text-ink-muted">
-              <th className="px-4 py-3 font-semibold">Product</th>
-              <th className="px-4 py-3 font-semibold">Category</th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="Product" col="name" basePath="/admin/products" sort={sort} dir={dir} /></th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="Category" col="category" basePath="/admin/products" sort={sort} dir={dir} /></th>
               <th className="px-4 py-3 font-semibold">From</th>
               <th className="px-4 py-3 font-semibold">Sizes</th>
               <th className="px-4 py-3 font-semibold">Stock</th>

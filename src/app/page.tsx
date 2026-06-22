@@ -12,7 +12,10 @@ import {
 export default async function HomePage() {
   const featured = await db.product.findMany({
     where: { active: true, featured: true },
-    include: { variants: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
+    include: {
+      variants: { where: { active: true }, orderBy: { sortOrder: "asc" } },
+      reviews: { where: { status: "APPROVED" }, select: { rating: true } },
+    },
     orderBy: { createdAt: "asc" },
     take: 4,
   });

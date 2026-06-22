@@ -349,6 +349,35 @@ export async function deleteTaxRate(formData: FormData) {
 
 // ---- Customers ----
 
+// ---- Reviews ----
+
+export async function setReviewStatus(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const status = String(formData.get("status"));
+  if (!["PENDING", "APPROVED", "HIDDEN"].includes(status)) return;
+  const review = await db.review.update({
+    where: { id },
+    data: { status },
+    include: { product: { select: { slug: true } } },
+  });
+  await logAudit("review.status", `${id} -> ${status}`);
+  revalidatePath("/admin/reviews");
+  revalidatePath(`/product/${review.product.slug}`);
+}
+
+export async function deleteReview(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const review = await db.review.delete({
+    where: { id },
+    include: { product: { select: { slug: true } } },
+  });
+  await logAudit("review.delete", id);
+  revalidatePath("/admin/reviews");
+  revalidatePath(`/product/${review.product.slug}`);
+}
+
 export async function toggleTaxExempt(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id"));

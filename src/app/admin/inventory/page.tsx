@@ -1,10 +1,27 @@
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { updateStock } from "../actions";
+import SortHeader from "../SortHeader";
 
-export default async function AdminInventory() {
+export default async function AdminInventory({
+  searchParams,
+}: {
+  searchParams: { sort?: string; dir?: string };
+}) {
+  const sort = searchParams.sort ?? "stock";
+  const dir: Prisma.SortOrder = searchParams.dir === "desc" ? "desc" : "asc";
+  const orderBy: Prisma.ProductVariantOrderByWithRelationInput =
+    sort === "sku"
+      ? { sku: dir }
+      : sort === "label"
+        ? { label: dir }
+        : sort === "product"
+          ? { product: { name: dir } }
+          : { stock: dir };
+
   const variants = await db.productVariant.findMany({
     include: { product: true },
-    orderBy: [{ stock: "asc" }],
+    orderBy,
   });
   const lowCount = variants.filter((v) => v.stock <= v.lowStockThreshold).length;
 
@@ -21,10 +38,10 @@ export default async function AdminInventory() {
         <table className="w-full min-w-[640px] text-sm">
           <thead className="border-b border-line bg-paper-soft text-left">
             <tr className="text-[11px] uppercase tracking-[0.12em] text-ink-muted">
-              <th className="px-4 py-3 font-semibold">Product</th>
-              <th className="px-4 py-3 font-semibold">Size</th>
-              <th className="px-4 py-3 font-semibold">SKU</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="Product" col="product" basePath="/admin/inventory" sort={sort} dir={dir} /></th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="Size" col="label" basePath="/admin/inventory" sort={sort} dir={dir} /></th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="SKU" col="sku" basePath="/admin/inventory" sort={sort} dir={dir} /></th>
+              <th className="px-4 py-3 font-semibold"><SortHeader label="Stock" col="stock" basePath="/admin/inventory" sort={sort} dir={dir} /></th>
               <th className="px-4 py-3 text-right font-semibold">Update Stock</th>
             </tr>
           </thead>

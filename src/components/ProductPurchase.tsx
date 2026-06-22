@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
 import { effectivePrice, isOnSale, discountPercent } from "@/lib/pricing";
+import { track } from "@/lib/gtag";
 
 export type PurchaseVariant = {
   id: string;
@@ -56,6 +57,11 @@ export default function ProductPurchase({
       },
       qty,
     );
+    track("add_to_cart", {
+      currency: "USD",
+      value: price * qty,
+      items: [{ item_id: selected.sku, item_name: `${name} ${selected.label}`, quantity: qty }],
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

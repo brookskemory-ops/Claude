@@ -26,7 +26,10 @@ export default async function ShopPage({
       active: true,
       ...(category && CATEGORIES.includes(category as never) ? { category } : {}),
     },
-    include: { variants: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
+    include: {
+      variants: { where: { active: true }, orderBy: { sortOrder: "asc" } },
+      reviews: { where: { status: "APPROVED" }, select: { rating: true } },
+    },
     orderBy: SORTS[sort] ?? SORTS.featured,
   });
 

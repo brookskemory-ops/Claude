@@ -9,6 +9,25 @@ import { createPendingOrder, finalizeOrder } from "@/lib/orders";
 import { stripe } from "@/lib/stripe";
 import { getHostedPaymentToken, hostedPaymentUrl } from "@/lib/authorizenet";
 
+export async function saveAbandonedCart(
+  email: string,
+  items: { name: string; variantLabel: string; quantity: number; unitPrice: number }[],
+  total: number,
+): Promise<void> {
+  if (!email || !items?.length) return;
+  if (!z.string().email().safeParse(email).success) return;
+  const key = email.toLowerCase();
+  try {
+    await db.abandonedCart.upsert({
+      where: { email: key },
+      create: { email: key, items: JSON.stringify(items), total, recovered: false },
+      update: { items: JSON.stringify(items), total, recovered: false, remindedAt: null },
+    });
+  } catch {
+    // best-effort; never block checkout
+  }
+}
+
 export async function quoteTax(state: string, taxable: number): Promise<{ tax: number }> {
   const session = await getSession();
   let exempt = false;

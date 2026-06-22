@@ -2,9 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { formatDate } from "@/lib/format";
 import ProductImage from "@/components/ProductImage";
 import ProductCard from "@/components/ProductCard";
 import ProductPurchase, { type PurchaseVariant } from "@/components/ProductPurchase";
+import Stars from "@/components/Stars";
+import ProductReviewForm from "./ProductReviewForm";
 import { minEffectivePrice, totalStock } from "@/lib/pricing";
 
 export async function generateMetadata({
@@ -30,9 +34,24 @@ export default async function ProductPage({
 
   const related = await db.product.findMany({
     where: { active: true, category: product.category, NOT: { id: product.id } },
-    include: { variants: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
+    include: {
+      variants: { where: { active: true }, orderBy: { sortOrder: "asc" } },
+      reviews: { where: { status: "APPROVED" }, select: { rating: true } },
+    },
     take: 4,
   });
+
+  const [reviews, session] = await Promise.all([
+    db.review.findMany({
+      where: { productId: product.id, status: "APPROVED" },
+      orderBy: { createdAt: "desc" },
+    }),
+    getSession(),
+  ]);
+  const reviewCount = reviews.length;
+  const avgRating = reviewCount
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviewCount
+    : 0;
 
   const variants: PurchaseVariant[] = product.variants.map((v) => ({
     id: v.id,
@@ -70,6 +89,15 @@ export default async function ProductPage({
           ? "https://schema.org/InStock"
           : "https://schema.org/OutOfStock",
     },
+    ...(reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: avgRating.toFixed(1),
+            reviewCount,
+          },
+        }
+      : {}),
   };
 
   return (
@@ -100,6 +128,11 @@ export default async function ProductPage({
           <p className="eyebrow">{product.category}</p>
           <h1 className="mt-2 text-4xl font-bold tracking-tight">{product.name}</h1>
           {product.tagline && <p className="mt-2 text-ink-muted">{product.tagline}</p>}
+          {reviewCount > 0 && (
+            <a href="#reviews" className="mt-3 inline-flex items-center gap-2 text-sm text-ink-muted hover:text-ink">
+              <Stars rating={avgRating} /> {avgRating.toFixed(1)} · {reviewCount} review{reviewCount !== 1 ? "s" : ""}
+            </a>
+          )}
 
           <div className="mt-6">
             <ProductPurchase
@@ -148,6 +181,50 @@ export default async function ProductPage({
           </div>
         </div>
       </div>
+
+      {/* Reviews */}
+      <section id="reviews" className="mt-24 border-t border-line pt-12">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Reviews</h2>
+            {reviewCount > 0 ? (
+              <div className="mt-2 flex items-center gap-2 text-sm text-ink-muted">
+                <Stars rating={avgRating} /> {avgRating.toFixed(1)} out of 5 · {reviewCount} review
+                {reviewCount !== 1 ? "s" : ""}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-ink-muted">No reviews yet.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_360px]">
+          <div className="space-y-6">
+            {reviews.map((r) => (
+              <div key={r.id} className="border-b border-line pb-6">
+                <div className="flex items-center gap-3">
+                  <Stars rating={r.rating} />
+                  {r.verified && (
+                    <span className="badge border border-line text-ink-muted">Verified buyer</span>
+                  )}
+                </div>
+                {r.title && <p className="mt-2 font-semibold">{r.title}</p>}
+                <p className="mt-1 text-sm text-ink-muted">{r.body}</p>
+                <p className="mt-2 text-xs text-ink-muted">
+                  {r.authorName} · {formatDate(r.createdAt)}
+                </p>
+              </div>
+            ))}
+            {reviewCount === 0 && (
+              <p className="text-sm text-ink-muted">Be the first to review this product.</p>
+            )}
+          </div>
+          <div>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.14em]">Write a review</h3>
+            <ProductReviewForm productId={product.id} slug={product.slug} canReview={!!session} />
+          </div>
+        </div>
+      </section>
 
       {related.length > 0 && (
         <section className="mt-24">

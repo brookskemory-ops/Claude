@@ -97,6 +97,21 @@ export async function sendLowStockAlert(args: {
   });
 }
 
+export async function sendAbandonedCart(args: {
+  to: string;
+  siteUrl: string;
+}): Promise<void> {
+  const body = `
+    <p>You left some items in your cart. They're still here when you're ready.</p>
+    <p><a href="${args.siteUrl}/cart" style="display:inline-block;background:#0a0a0a;color:#fff;padding:12px 20px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:.14em">Return to Cart</a></p>
+    <p style="font-size:13px;color:#737373">Research Use Only — not for human or veterinary use.</p>`;
+  await sendEmail({
+    to: args.to,
+    subject: "You left items in your Axevia cart",
+    html: layout("Still interested?", body),
+  });
+}
+
 export async function sendReferralReward(args: {
   to: string;
   code: string;

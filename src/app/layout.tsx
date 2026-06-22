@@ -7,9 +7,10 @@ import Footer from "@/components/Footer";
 import AgeGate from "@/components/AgeGate";
 import CookieConsent from "@/components/CookieConsent";
 import ReferralCapture from "@/components/ReferralCapture";
+import Analytics from "@/components/Analytics";
 import { getSession } from "@/lib/auth";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://axevia.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://axevia.co";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -39,6 +40,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col">
+        <Analytics />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

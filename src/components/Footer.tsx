@@ -25,6 +25,7 @@ export default function Footer() {
           title="Company"
           links={[
             { href: "/about", label: "About & Quality" },
+            { href: "/wholesale", label: "Wholesale" },
             { href: "/contact", label: "Contact" },
             { href: "/faq", label: "FAQ" },
             { href: "/research-use-policy", label: "Research-Use Policy" },

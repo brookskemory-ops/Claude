@@ -10,8 +10,6 @@ import AddressManager from "./AddressManager";
 import ChangePassword from "./ChangePassword";
 import ExemptionUpload from "./ExemptionUpload";
 import DeleteAccount from "./DeleteAccount";
-import ReferralSection from "./ReferralSection";
-import { ensureReferralCode } from "@/lib/referral";
 
 export const metadata: Metadata = { title: "My Account" };
 
@@ -34,20 +32,6 @@ export default async function AccountPage() {
 
   if (!user) redirect("/account/login");
 
-  // Referral data
-  const referralCode = await ensureReferralCode(user.id);
-  const [made, received] = await Promise.all([
-    db.referral.findMany({ where: { referrerId: user.id } }),
-    db.referral.findUnique({ where: { refereeId: user.id } }),
-  ]);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const referralLink = `${siteUrl}/?ref=${referralCode}`;
-  const rewardCodes = made
-    .map((r) => r.referrerCouponCode)
-    .filter((c): c is string => Boolean(c));
-  const completed = made.filter((r) => r.status === "COMPLETED").length;
-  const pending = made.filter((r) => r.status === "PENDING").length;
-
   return (
     <div className="container-site py-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -61,6 +45,9 @@ export default async function AccountPage() {
         <div className="flex flex-wrap gap-2">
           <Link href="/account/tracking" className="btn-outline btn-sm">
             Track Shipments
+          </Link>
+          <Link href="/account/referral" className="btn-outline btn-sm">
+            Referral
           </Link>
           {user.role === "ADMIN" && (
             <Link href="/admin" className="btn-outline btn-sm">
@@ -118,14 +105,6 @@ export default async function AccountPage() {
 
         {/* Sidebar */}
         <aside className="space-y-10">
-          <ReferralSection
-            link={referralLink}
-            completed={completed}
-            pending={pending}
-            rewardCodes={rewardCodes}
-            welcomeCode={received?.refereeCouponCode ?? null}
-          />
-
           <AddressManager addresses={addresses} />
 
           <div>

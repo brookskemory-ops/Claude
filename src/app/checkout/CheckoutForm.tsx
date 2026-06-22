@@ -13,6 +13,7 @@ import {
   finalizeSimulated,
   validateCoupon,
   quoteTax,
+  saveAbandonedCart,
 } from "./actions";
 import PayPalButton from "@/components/PayPalButton";
 
@@ -247,7 +248,23 @@ export default function CheckoutForm({
                 </label>
               )}
               <div className="mt-8 flex justify-end">
-                <button className="btn-primary" disabled={!canContinueShipping} onClick={() => setStep(1)}>
+                <button
+                  className="btn-primary"
+                  disabled={!canContinueShipping}
+                  onClick={() => {
+                    saveAbandonedCart(
+                      email,
+                      items.map((i) => ({
+                        name: i.name,
+                        variantLabel: i.variantLabel,
+                        quantity: i.quantity,
+                        unitPrice: i.unitPrice,
+                      })),
+                      total,
+                    );
+                    setStep(1);
+                  }}
+                >
                   Continue to Payment
                 </button>
               </div>

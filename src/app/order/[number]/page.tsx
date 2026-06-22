@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { formatPrice, formatDateTime } from "@/lib/format";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
+import PurchaseTracking from "./PurchaseTracking";
 import { requestReturn } from "./actions";
 
 export default async function OrderPage({
@@ -42,6 +43,7 @@ export default async function OrderPage({
 
   return (
     <div className="container-site max-w-3xl py-12">
+      {confirmed && <PurchaseTracking number={order.number} total={order.total} />}
       {confirmed && (
         <div className="mb-8 border border-ink bg-ink p-6 text-paper">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-paper/70">

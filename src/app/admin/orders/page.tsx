@@ -1,12 +1,33 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { formatPrice, formatDate } from "@/lib/format";
 import { updateOrderStatus } from "../actions";
 import { ORDER_STATUSES } from "@/lib/types";
+import SortHeader from "../SortHeader";
 
-export default async function AdminOrders() {
+const ORDER_SORTS: Record<string, Prisma.OrderOrderByWithRelationInput> = {
+  number: { number: "asc" },
+  createdAt: { createdAt: "asc" },
+  email: { email: "asc" },
+  total: { total: "asc" },
+  status: { status: "asc" },
+};
+
+export default async function AdminOrders({
+  searchParams,
+}: {
+  searchParams: { sort?: string; dir?: string };
+}) {
+  const sort = searchParams.sort ?? "createdAt";
+  const dir = searchParams.dir === "asc" ? "asc" : "desc";
+  const base = ORDER_SORTS[sort] ?? ORDER_SORTS.createdAt;
+  const orderBy = Object.fromEntries(
+    Object.entries(base).map(([k]) => [k, dir]),
+  ) as Prisma.OrderOrderByWithRelationInput;
+
   const orders = await db.order.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy,
     include: { items: true },
   });
 
@@ -25,12 +46,12 @@ export default async function AdminOrders() {
           <table className="w-full min-w-[720px] text-sm">
             <thead className="border-b border-line bg-paper-soft text-left">
               <tr className="text-[11px] uppercase tracking-[0.12em] text-ink-muted">
-                <th className="px-4 py-3 font-semibold">Order</th>
-                <th className="px-4 py-3 font-semibold">Date</th>
-                <th className="px-4 py-3 font-semibold">Customer</th>
+                <th className="px-4 py-3 font-semibold"><SortHeader label="Order" col="number" basePath="/admin/orders" sort={sort} dir={dir} /></th>
+                <th className="px-4 py-3 font-semibold"><SortHeader label="Date" col="createdAt" basePath="/admin/orders" sort={sort} dir={dir} /></th>
+                <th className="px-4 py-3 font-semibold"><SortHeader label="Customer" col="email" basePath="/admin/orders" sort={sort} dir={dir} /></th>
                 <th className="px-4 py-3 font-semibold">Items</th>
-                <th className="px-4 py-3 font-semibold">Total</th>
-                <th className="px-4 py-3 text-right font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold"><SortHeader label="Total" col="total" basePath="/admin/orders" sort={sort} dir={dir} /></th>
+                <th className="px-4 py-3 text-right font-semibold"><SortHeader label="Status" col="status" basePath="/admin/orders" sort={sort} dir={dir} align="right" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
