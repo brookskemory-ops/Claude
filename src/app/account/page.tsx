@@ -8,6 +8,8 @@ import { logout } from "./actions";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
 import AddressManager from "./AddressManager";
 import ChangePassword from "./ChangePassword";
+import ExemptionUpload from "./ExemptionUpload";
+import DeleteAccount from "./DeleteAccount";
 
 export const metadata: Metadata = { title: "My Account" };
 
@@ -116,6 +118,12 @@ export default async function AccountPage() {
           </div>
 
           <ChangePassword />
+
+          <ExemptionUpload taxExempt={user.taxExempt} certUrl={user.exemptionCertUrl} />
+
+          <div className="border-t border-line pt-4">
+            <DeleteAccount />
+          </div>
         </aside>
       </div>
     </div>

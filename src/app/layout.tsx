@@ -4,6 +4,7 @@ import { CartProvider } from "@/context/CartContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AgeGate from "@/components/AgeGate";
+import CookieConsent from "@/components/CookieConsent";
 import { getSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default async function RootLayout({
           <Header session={session} />
           <main className="flex-1">{children}</main>
           <Footer />
+          <CookieConsent />
         </CartProvider>
       </body>
     </html>

@@ -6,8 +6,8 @@ import {
   isCouponValid,
   round2,
   shippingFor,
-  TAX_RATE,
 } from "@/lib/pricing";
+import { computeTax } from "@/lib/tax";
 import {
   sendOrderConfirmation,
   sendLowStockAlert,
@@ -102,7 +102,8 @@ export async function createPendingOrder(
 
   const discountedSubtotal = round2(subtotal - discount);
   const shipping = shippingFor(discountedSubtotal);
-  const tax = round2(discountedSubtotal * TAX_RATE);
+  const taxUser = input.userId ? await db.user.findUnique({ where: { id: input.userId } }) : null;
+  const tax = await computeTax(input.shipping.state, discountedSubtotal, taxUser?.taxExempt ?? false);
   const total = round2(discountedSubtotal + shipping + tax);
   const number = generateOrderNumber();
 

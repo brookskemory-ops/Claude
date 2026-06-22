@@ -9,6 +9,9 @@ const LINKS = [
   { href: "/admin/inventory", label: "Inventory" },
   { href: "/admin/coupons", label: "Sales & Coupons" },
   { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/tax", label: "Tax" },
+  { href: "/admin/audit", label: "Audit Log" },
 ];
 
 export default function AdminNav() {

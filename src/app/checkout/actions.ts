@@ -4,8 +4,19 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { couponDiscount, isCouponValid } from "@/lib/pricing";
+import { computeTax } from "@/lib/tax";
 import { createPendingOrder, finalizeOrder } from "@/lib/orders";
 import { stripe } from "@/lib/stripe";
+
+export async function quoteTax(state: string, taxable: number): Promise<{ tax: number }> {
+  const session = await getSession();
+  let exempt = false;
+  if (session) {
+    const user = await db.user.findUnique({ where: { id: session.sub } });
+    exempt = user?.taxExempt ?? false;
+  }
+  return { tax: await computeTax(state, taxable, exempt) };
+}
 
 export async function validateCoupon(code: string, subtotal: number) {
   const coupon = await db.coupon.findUnique({

@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/auth";
 import { CATEGORIES, ORDER_STATUSES } from "@/lib/types";
 import { buyCheapestLabel } from "@/lib/shipping";
 import { markOrderShipped, refundOrder, cancelOrder } from "@/lib/orders";
+import { logAudit } from "@/lib/audit";
 
 function revalidateOrder(id: string) {
   revalidatePath("/admin/orders");
@@ -184,7 +185,9 @@ export async function updateProduct(id: string, _prev: FormResult | null, formDa
 
 export async function deleteProduct(formData: FormData) {
   await requireAdmin();
-  await db.product.delete({ where: { id: String(formData.get("id")) } });
+  const id = String(formData.get("id"));
+  await db.product.delete({ where: { id } });
+  await logAudit("product.delete", id);
   revalidatePath("/admin/products");
   revalidatePath("/shop");
 }
@@ -204,7 +207,8 @@ export async function updateOrderStatus(formData: FormData) {
   const status = String(formData.get("status"));
   if (!ORDER_STATUSES.includes(status as never)) return;
   await db.order.update({ where: { id }, data: { status } });
-  revalidatePath("/admin/orders");
+  await logAudit("order.status", `${id} -> ${status}`);
+  revalidateOrder(id);
 }
 
 const couponSchema = z
@@ -267,6 +271,7 @@ export async function markShipped(formData: FormData) {
   const tracking = String(formData.get("tracking") || "");
   if (!tracking) return;
   await markOrderShipped(id, { carrier, tracking });
+  await logAudit("order.ship", `${id} ${carrier} ${tracking}`);
   revalidateOrder(id);
 }
 
@@ -298,6 +303,7 @@ export async function refundOrderAction(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id"));
   await refundOrder(id);
+  await logAudit("order.refund", id);
   revalidateOrder(id);
 }
 
@@ -305,6 +311,7 @@ export async function cancelOrderAction(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id"));
   await cancelOrder(id);
+  await logAudit("order.cancel", id);
   revalidateOrder(id);
 }
 
@@ -315,5 +322,39 @@ export async function updateReturn(formData: FormData) {
   const status = String(formData.get("status"));
   if (!["REQUESTED", "APPROVED", "REJECTED", "COMPLETED"].includes(status)) return;
   await db.returnRequest.update({ where: { id: returnId }, data: { status } });
+  await logAudit("return.update", `${returnId} -> ${status}`);
   revalidateOrder(orderId);
+}
+
+// ---- Tax rates ----
+
+export async function createTaxRate(formData: FormData) {
+  await requireAdmin();
+  const state = String(formData.get("state") || "").trim().toUpperCase().slice(0, 2);
+  const percent = Number(formData.get("percent") || 0);
+  if (!state || percent < 0) return;
+  await db.taxRate.upsert({ where: { state }, create: { state, percent }, update: { percent } });
+  await logAudit("tax.set", `${state} = ${percent}%`);
+  revalidatePath("/admin/tax");
+}
+
+export async function deleteTaxRate(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const rate = await db.taxRate.findUnique({ where: { id } });
+  await db.taxRate.delete({ where: { id } });
+  await logAudit("tax.delete", rate?.state ?? id);
+  revalidatePath("/admin/tax");
+}
+
+// ---- Customers ----
+
+export async function toggleTaxExempt(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const user = await db.user.findUnique({ where: { id } });
+  if (!user) return;
+  await db.user.update({ where: { id }, data: { taxExempt: !user.taxExempt } });
+  await logAudit("customer.taxExempt", `${user.email} -> ${!user.taxExempt}`);
+  revalidatePath("/admin/customers");
 }

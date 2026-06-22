@@ -105,6 +105,14 @@ export async function logout() {
   redirect("/");
 }
 
+export async function deleteAccount() {
+  const session = await getSession();
+  if (!session) return;
+  await db.user.delete({ where: { id: session.sub } });
+  destroySession();
+  redirect("/");
+}
+
 const changePwSchema = z.object({
   current: z.string().min(1, "Enter your current password"),
   next: z.string().min(6, "New password must be at least 6 characters"),

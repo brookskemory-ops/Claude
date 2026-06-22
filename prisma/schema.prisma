@@ -14,6 +14,8 @@ model User {
   passwordHash       String
   role               String               @default("CUSTOMER") // CUSTOMER | ADMIN
   emailVerified      DateTime?
+  taxExempt          Boolean              @default(false)
+  exemptionCertUrl   String?
   addresses          Address[]
   orders             Order[]
   resetTokens        PasswordResetToken[]
@@ -148,6 +150,21 @@ model ReturnRequest {
   reason    String
   status    String   @default("REQUESTED") // REQUESTED | APPROVED | REJECTED | COMPLETED
   createdAt DateTime @default(now())
+}
+
+model TaxRate {
+  id        String   @id @default(cuid())
+  state     String   @unique // 2-letter state code
+  percent   Float // e.g. 8.25
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorEmail String
+  action     String
+  detail     String   @default("")
+  createdAt  DateTime @default(now())
 }
 
 model OrderItem {

@@ -57,6 +57,19 @@ export default function Footer() {
             veterinary use, diagnosis, treatment, or prevention of any disease. By purchasing, you
             confirm you are a qualified researcher.
           </p>
+          <nav className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+            {[
+              { href: "/research-use-policy", label: "Research-Use Policy" },
+              { href: "/terms", label: "Terms" },
+              { href: "/privacy", label: "Privacy" },
+              { href: "/refund-policy", label: "Refund & Returns" },
+              { href: "/shipping-policy", label: "Shipping" },
+            ].map((l) => (
+              <Link key={l.href} href={l.href} className="text-paper/50 hover:text-paper">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
           <p className="mt-2">© {new Date().getFullYear()} Axevia. All rights reserved.</p>
         </div>
       </div>

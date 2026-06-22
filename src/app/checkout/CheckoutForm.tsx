@@ -1,12 +1,18 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
-import { shippingFor, TAX_RATE, round2 } from "@/lib/pricing";
-import { submitOrder, payWithStripe, finalizeSimulated, validateCoupon } from "./actions";
+import { shippingFor, round2 } from "@/lib/pricing";
+import {
+  submitOrder,
+  payWithStripe,
+  finalizeSimulated,
+  validateCoupon,
+  quoteTax,
+} from "./actions";
 import PayPalButton from "@/components/PayPalButton";
 
 type Address = {
@@ -67,6 +73,7 @@ export default function CheckoutForm({
   const [saveAddress, setSaveAddress] = useState(false);
   const [method, setMethod] = useState(methods[0]);
   const [ruoAck, setRuoAck] = useState(false);
+  const [tax, setTax] = useState(0);
 
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
@@ -79,9 +86,24 @@ export default function CheckoutForm({
   const discount = coupon?.discount ?? 0;
   const discounted = Math.max(0, round2(subtotal - discount));
   const shipCost = shippingFor(discounted);
-  const tax = round2(discounted * TAX_RATE);
   const total = round2(discounted + shipCost + tax);
   const billingAddress = billingSame ? shipping : billing;
+
+  // Quote sales tax from the shipping state (server-authoritative; recomputed at order time).
+  useEffect(() => {
+    const st = shipping.state.trim();
+    if (st.length < 2) {
+      setTax(0);
+      return;
+    }
+    let active = true;
+    quoteTax(st, discounted).then((r) => {
+      if (active) setTax(r.tax);
+    });
+    return () => {
+      active = false;
+    };
+  }, [shipping.state, discounted]);
 
   const canContinueShipping = email && requiredFilled(shipping);
   const canContinuePayment = billingSame || requiredFilled(billing);

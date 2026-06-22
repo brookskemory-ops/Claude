@@ -169,6 +169,13 @@ async function main() {
     create: { code: "AXEVIA20", percentOff: 20, active: true },
   });
 
+  // Example sales-tax rate (manage states under Admin → Tax).
+  await db.taxRate.upsert({
+    where: { state: "TX" },
+    update: {},
+    create: { state: "TX", percent: 8.25 },
+  });
+
   console.log("Seed complete.");
   console.log("  Admin:    admin@axevia.com / admin123");
   console.log("  Customer: researcher@example.com / password123");
