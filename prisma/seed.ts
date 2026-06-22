@@ -99,6 +99,12 @@ const products = [
 async function main() {
   console.log("Seeding database...");
 
+  // Idempotent: only seed an empty database, so redeploys never overwrite real data.
+  if ((await db.user.count()) > 0) {
+    console.log("Database already has data — skipping seed.");
+    return;
+  }
+
   const now = new Date();
   await db.user.upsert({
     where: { email: "admin@axevia.com" },
