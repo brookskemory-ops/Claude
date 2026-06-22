@@ -1,6 +1,9 @@
 export type CartItem = {
-  slug: string;
-  name: string;
+  variantId: string;
+  slug: string; // product slug
+  name: string; // product name
+  variantLabel: string; // e.g. "10mg"
+  sku: string;
   imageKey: string;
   unitPrice: number;
   quantity: number;
@@ -15,12 +18,13 @@ export type SessionPayload = {
 };
 
 export const CATEGORIES = [
-  "Protein",
-  "Pre-Workout",
-  "Creatine",
-  "Vitamins",
-  "Recovery",
-  "Greens",
+  "Metabolic",
+  "Regenerative",
+  "Cognitive",
+  "Growth Factor",
+  "Cosmetic",
+  "Blends",
+  "Lab Supplies",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];

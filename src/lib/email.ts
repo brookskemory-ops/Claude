@@ -1,0 +1,79 @@
+import "server-only";
+import { Resend } from "resend";
+
+const apiKey = process.env.RESEND_API_KEY;
+const from = process.env.EMAIL_FROM || "Axevia <noreply@axevia.com>";
+const resend = apiKey ? new Resend(apiKey) : null;
+
+type SendArgs = { to: string; subject: string; html: string };
+
+/**
+ * Sends an email via Resend. When RESEND_API_KEY is unset (dev/demo), logs to the
+ * console instead so flows still work without an email provider configured.
+ */
+export async function sendEmail({ to, subject, html }: SendArgs): Promise<void> {
+  if (!resend) {
+    console.log(`\n[email:dev] To: ${to}\n[email:dev] Subject: ${subject}\n`);
+    return;
+  }
+  try {
+    await resend.emails.send({ from, to, subject, html });
+  } catch (err) {
+    console.error("[email] send failed:", err);
+  }
+}
+
+function layout(title: string, body: string): string {
+  return `<div style="font-family:Helvetica,Arial,sans-serif;max-width:560px;margin:0 auto;color:#0a0a0a">
+    <div style="border-bottom:2px solid #0a0a0a;padding:16px 0;font-weight:700;letter-spacing:.28em;text-transform:uppercase">AXEVIA</div>
+    <h1 style="font-size:20px;margin:24px 0 12px">${title}</h1>
+    ${body}
+    <p style="margin-top:32px;font-size:12px;color:#737373">Axevia — Research Use Only. Products are for laboratory research only and not for human or veterinary use.</p>
+  </div>`;
+}
+
+export async function sendOrderConfirmation(args: {
+  to: string;
+  orderNumber: string;
+  total: string;
+  siteUrl: string;
+}): Promise<void> {
+  const body = `
+    <p>Thank you for your order. We've received it and it's being processed.</p>
+    <p style="font-size:15px"><strong>Order ${args.orderNumber}</strong> — ${args.total}</p>
+    <p><a href="${args.siteUrl}/order/${args.orderNumber}" style="display:inline-block;background:#0a0a0a;color:#fff;padding:12px 20px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:.14em">View Order</a></p>`;
+  await sendEmail({
+    to: args.to,
+    subject: `Axevia order ${args.orderNumber} confirmed`,
+    html: layout("Order confirmed", body),
+  });
+}
+
+export async function sendPasswordReset(args: {
+  to: string;
+  resetUrl: string;
+}): Promise<void> {
+  const body = `
+    <p>We received a request to reset your Axevia password. This link expires in 1 hour.</p>
+    <p><a href="${args.resetUrl}" style="display:inline-block;background:#0a0a0a;color:#fff;padding:12px 20px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:.14em">Reset Password</a></p>
+    <p style="font-size:13px;color:#737373">If you didn't request this, you can ignore this email.</p>`;
+  await sendEmail({
+    to: args.to,
+    subject: "Reset your Axevia password",
+    html: layout("Password reset", body),
+  });
+}
+
+export async function sendVerification(args: {
+  to: string;
+  verifyUrl: string;
+}): Promise<void> {
+  const body = `
+    <p>Welcome to Axevia. Please confirm your email address to finish setting up your account.</p>
+    <p><a href="${args.verifyUrl}" style="display:inline-block;background:#0a0a0a;color:#fff;padding:12px 20px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:.14em">Verify Email</a></p>`;
+  await sendEmail({
+    to: args.to,
+    subject: "Verify your Axevia email",
+    html: layout("Verify your email", body),
+  });
+}

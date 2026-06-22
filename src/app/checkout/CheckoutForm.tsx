@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
 import { shippingFor, TAX_RATE, round2 } from "@/lib/pricing";
-import { placeOrder, validateCoupon } from "./actions";
+import { submitOrder, payWithStripe, finalizeSimulated, validateCoupon } from "./actions";
+import PayPalButton from "@/components/PayPalButton";
 
 type Address = {
   recipient: string;
@@ -30,19 +31,33 @@ const EMPTY: Address = {
   phone: "",
 };
 
-const STEPS = ["Shipping", "Billing", "Review"] as const;
+const STEPS = ["Shipping", "Payment", "Review"] as const;
 
 export default function CheckoutForm({
   loggedIn,
   defaultEmail,
   defaultAddress,
+  stripeEnabled,
+  paypalEnabled,
+  paypalClientId,
 }: {
   loggedIn: boolean;
   defaultEmail: string;
   defaultAddress: Address | null;
+  stripeEnabled: boolean;
+  paypalEnabled: boolean;
+  paypalClientId: string;
 }) {
   const router = useRouter();
   const { items, subtotal, clear, isReady } = useCart();
+
+  const methods = useMemo(() => {
+    const m: string[] = [];
+    if (stripeEnabled) m.push("card");
+    if (paypalEnabled) m.push("paypal");
+    if (m.length === 0) m.push("simulated");
+    return m;
+  }, [stripeEnabled, paypalEnabled]);
 
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState(defaultEmail);
@@ -50,7 +65,8 @@ export default function CheckoutForm({
   const [billingSame, setBillingSame] = useState(true);
   const [billing, setBilling] = useState<Address>(EMPTY);
   const [saveAddress, setSaveAddress] = useState(false);
-  const [card, setCard] = useState({ number: "", exp: "", cvc: "" });
+  const [method, setMethod] = useState(methods[0]);
+  const [ruoAck, setRuoAck] = useState(false);
 
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
@@ -58,35 +74,23 @@ export default function CheckoutForm({
 
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const orderIdRef = useRef<string | null>(null);
 
   const discount = coupon?.discount ?? 0;
   const discounted = Math.max(0, round2(subtotal - discount));
   const shipCost = shippingFor(discounted);
   const tax = round2(discounted * TAX_RATE);
   const total = round2(discounted + shipCost + tax);
-
   const billingAddress = billingSame ? shipping : billing;
 
-  const canContinueShipping = useMemo(
-    () => email && requiredFilled(shipping),
-    [email, shipping],
-  );
-  const canContinueBilling = useMemo(
-    () =>
-      (billingSame || requiredFilled(billing)) &&
-      card.number.length >= 12 &&
-      card.exp &&
-      card.cvc.length >= 3,
-    [billingSame, billing, card],
-  );
+  const canContinueShipping = email && requiredFilled(shipping);
+  const canContinuePayment = billingSame || requiredFilled(billing);
 
   if (isReady && items.length === 0) {
     return (
       <div className="container-site flex flex-col items-center py-24 text-center">
         <h1 className="text-3xl font-bold tracking-tight">Your cart is empty</h1>
-        <Link href="/shop" className="btn-primary mt-8">
-          Shop Products
-        </Link>
+        <Link href="/shop" className="btn-primary mt-8">Browse Catalog</Link>
       </div>
     );
   }
@@ -104,24 +108,55 @@ export default function CheckoutForm({
     }
   }
 
-  async function submit() {
-    setError("");
-    setSubmitting(true);
-    const res = await placeOrder({
+  // Creates the pending order once; returns its id (cached for PayPal retries).
+  async function ensureOrder(): Promise<string | null> {
+    if (orderIdRef.current) return orderIdRef.current;
+    const res = await submitOrder({
       email,
-      items: items.map((i) => ({ slug: i.slug, quantity: i.quantity })),
+      items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
       shipping,
       billing: billingAddress,
       couponCode: coupon?.code ?? "",
+      ruoAcknowledged: ruoAck,
       saveAddress: loggedIn && saveAddress,
     });
-    if (res.ok) {
-      clear();
-      router.push(`/order/${res.orderNumber}?confirmed=1`);
-    } else {
+    if (!res.ok) {
+      setError(res.error);
+      return null;
+    }
+    orderIdRef.current = res.orderId;
+    return res.orderId;
+  }
+
+  async function placeOrder() {
+    setError("");
+    if (!ruoAck) {
+      setError("Please confirm the Research-Use-Only acknowledgment.");
+      return;
+    }
+    setSubmitting(true);
+    const orderId = await ensureOrder();
+    if (!orderId) {
+      setSubmitting(false);
+      return;
+    }
+    if (method === "card") {
+      const res = await payWithStripe(orderId);
+      if (res.ok) {
+        window.location.href = res.url;
+        return;
+      }
       setError(res.error);
       setSubmitting(false);
-      setStep(0);
+    } else {
+      const res = await finalizeSimulated(orderId);
+      if (res.ok) {
+        clear();
+        router.push(`/order/${res.number}?confirmed=1`);
+      } else {
+        setError(res.error);
+        setSubmitting(false);
+      }
     }
   }
 
@@ -129,22 +164,13 @@ export default function CheckoutForm({
     <div className="container-site py-12">
       <h1 className="text-3xl font-bold tracking-tight">Checkout</h1>
 
-      {/* Steps */}
       <div className="mt-8 flex items-center gap-2">
         {STEPS.map((label, i) => (
           <div key={label} className="flex items-center gap-2">
-            <div
-              className={`flex h-7 w-7 items-center justify-center text-xs font-bold ${
-                i <= step ? "bg-ink text-paper" : "bg-paper-muted text-ink-muted"
-              }`}
-            >
+            <div className={`flex h-7 w-7 items-center justify-center text-xs font-bold ${i <= step ? "bg-ink text-paper" : "bg-paper-muted text-ink-muted"}`}>
               {i + 1}
             </div>
-            <span
-              className={`text-xs font-semibold uppercase tracking-[0.14em] ${
-                i <= step ? "text-ink" : "text-ink-muted"
-              }`}
-            >
+            <span className={`text-xs font-semibold uppercase tracking-[0.14em] ${i <= step ? "text-ink" : "text-ink-muted"}`}>
               {label}
             </span>
             {i < STEPS.length - 1 && <span className="mx-2 h-px w-8 bg-line" />}
@@ -152,50 +178,28 @@ export default function CheckoutForm({
         ))}
       </div>
 
-      {error && (
-        <p className="mt-6 border border-ink bg-paper-muted px-4 py-3 text-sm">
-          {error}
-        </p>
-      )}
+      {error && <p className="mt-6 border border-ink bg-paper-muted px-4 py-3 text-sm">{error}</p>}
 
       <div className="mt-8 grid gap-12 lg:grid-cols-[1fr_360px]">
         <div>
           {step === 0 && (
             <section>
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em]">
-                Contact
-              </h2>
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em]">Contact</h2>
               <div className="mb-8">
                 <label className="label">Email</label>
-                <input
-                  className="input"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                />
+                <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="lab@institution.edu" />
               </div>
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em]">
-                Shipping Address
-              </h2>
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em]">Shipping Address</h2>
               <AddressFields value={shipping} onChange={setShipping} />
               {loggedIn && (
                 <label className="mt-4 flex items-center gap-2 text-sm text-ink-muted">
-                  <input
-                    type="checkbox"
-                    checked={saveAddress}
-                    onChange={(e) => setSaveAddress(e.target.checked)}
-                  />
+                  <input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} />
                   Save this address to my account
                 </label>
               )}
               <div className="mt-8 flex justify-end">
-                <button
-                  className="btn-primary"
-                  disabled={!canContinueShipping}
-                  onClick={() => setStep(1)}
-                >
-                  Continue to Billing
+                <button className="btn-primary" disabled={!canContinueShipping} onClick={() => setStep(1)}>
+                  Continue to Payment
                 </button>
               </div>
             </section>
@@ -203,71 +207,29 @@ export default function CheckoutForm({
 
           {step === 1 && (
             <section>
-              <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em]">
-                Payment
-              </h2>
-              <p className="mb-4 bg-paper-muted px-4 py-2 text-xs text-ink-muted">
-                Demo checkout — no real card is charged. Any test values work.
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <label className="label">Card Number</label>
-                  <input
-                    className="input"
-                    inputMode="numeric"
-                    placeholder="4242 4242 4242 4242"
-                    value={card.number}
-                    onChange={(e) =>
-                      setCard({ ...card, number: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Expiry</label>
-                    <input
-                      className="input"
-                      placeholder="MM/YY"
-                      value={card.exp}
-                      onChange={(e) => setCard({ ...card, exp: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="label">CVC</label>
-                    <input
-                      className="input"
-                      placeholder="123"
-                      value={card.cvc}
-                      onChange={(e) => setCard({ ...card, cvc: e.target.value })}
-                    />
-                  </div>
-                </div>
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em]">Payment Method</h2>
+              <div className="space-y-2">
+                {methods.includes("card") && (
+                  <MethodRow id="card" method={method} setMethod={setMethod} title="Credit / Debit Card (incl. Google Pay)" note="Securely processed by Stripe." />
+                )}
+                {methods.includes("paypal") && (
+                  <MethodRow id="paypal" method={method} setMethod={setMethod} title="PayPal" note="Pay with your PayPal account." />
+                )}
+                {methods.includes("simulated") && (
+                  <MethodRow id="simulated" method={method} setMethod={setMethod} title="Simulated Checkout (Demo)" note="No payment processor configured — no real charge is made." />
+                )}
               </div>
 
-              <h2 className="mb-4 mt-10 text-sm font-semibold uppercase tracking-[0.18em]">
-                Billing Address
-              </h2>
+              <h2 className="mb-4 mt-10 text-sm font-semibold uppercase tracking-[0.18em]">Billing Address</h2>
               <label className="mb-4 flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={billingSame}
-                  onChange={(e) => setBillingSame(e.target.checked)}
-                />
+                <input type="checkbox" checked={billingSame} onChange={(e) => setBillingSame(e.target.checked)} />
                 Same as shipping address
               </label>
-              {!billingSame && (
-                <AddressFields value={billing} onChange={setBilling} />
-              )}
+              {!billingSame && <AddressFields value={billing} onChange={setBilling} />}
 
               <div className="mt-8 flex justify-between">
-                <button className="btn-ghost" onClick={() => setStep(0)}>
-                  ← Back
-                </button>
-                <button
-                  className="btn-primary"
-                  disabled={!canContinueBilling}
-                  onClick={() => setStep(2)}
-                >
+                <button className="btn-ghost" onClick={() => setStep(0)}>← Back</button>
+                <button className="btn-primary" disabled={!canContinuePayment} onClick={() => setStep(2)}>
                   Review Order
                 </button>
               </div>
@@ -276,62 +238,63 @@ export default function CheckoutForm({
 
           {step === 2 && (
             <section className="space-y-8">
-              <ReviewBlock title="Contact" onEdit={() => setStep(0)}>
-                {email}
-              </ReviewBlock>
-              <ReviewBlock title="Shipping To" onEdit={() => setStep(0)}>
-                <AddressSummary address={shipping} />
-              </ReviewBlock>
-              <ReviewBlock title="Billing" onEdit={() => setStep(1)}>
-                <AddressSummary address={billingAddress} />
-                <p className="mt-1">
-                  Card ending •••• {card.number.replace(/\s/g, "").slice(-4) || "0000"}
-                </p>
-              </ReviewBlock>
+              <ReviewBlock title="Contact" onEdit={() => setStep(0)}>{email}</ReviewBlock>
+              <ReviewBlock title="Shipping To" onEdit={() => setStep(0)}><AddressSummary address={shipping} /></ReviewBlock>
+              <ReviewBlock title="Payment" onEdit={() => setStep(1)}>{methodLabel(method)}</ReviewBlock>
 
               <div>
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
-                  Items
-                </h3>
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">Items</h3>
                 <ul className="divide-y divide-line border-y border-line">
                   {items.map((i) => (
-                    <li key={i.slug} className="flex justify-between py-3 text-sm">
-                      <span>
-                        {i.name} × {i.quantity}
-                      </span>
+                    <li key={i.variantId} className="flex justify-between py-3 text-sm">
+                      <span>{i.name} · {i.variantLabel} × {i.quantity}</span>
                       <span>{formatPrice(i.unitPrice * i.quantity)}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="flex justify-between">
-                <button className="btn-ghost" onClick={() => setStep(1)}>
-                  ← Back
-                </button>
-                <button
-                  className="btn-primary"
-                  disabled={submitting}
-                  onClick={submit}
-                >
-                  {submitting ? "Placing Order…" : `Place Order · ${formatPrice(total)}`}
-                </button>
+              <label className="flex items-start gap-3 border border-ink bg-paper-muted p-4 text-sm">
+                <input type="checkbox" className="mt-0.5" checked={ruoAck} onChange={(e) => setRuoAck(e.target.checked)} />
+                <span>
+                  I confirm I am a qualified researcher (21+) and that these products are purchased
+                  strictly for <strong>laboratory research use only</strong> — not for human or
+                  veterinary use. I agree to the{" "}
+                  <Link href="/research-use-policy" target="_blank" className="underline">Research-Use Policy</Link>.
+                </span>
+              </label>
+
+              <div className="flex items-center justify-between gap-4">
+                <button className="btn-ghost" onClick={() => setStep(1)}>← Back</button>
+                {method === "paypal" ? (
+                  <div className="w-64">
+                    {ruoAck ? (
+                      <PayPalButton
+                        clientId={paypalClientId}
+                        ensureOrder={ensureOrder}
+                        onComplete={(number) => { clear(); router.push(`/order/${number}?confirmed=1`); }}
+                        onError={(m) => setError(m)}
+                      />
+                    ) : (
+                      <p className="text-right text-xs text-ink-muted">Confirm the acknowledgment to pay.</p>
+                    )}
+                  </div>
+                ) : (
+                  <button className="btn-primary" disabled={submitting || !ruoAck} onClick={placeOrder}>
+                    {submitting ? "Processing…" : `Place Order · ${formatPrice(total)}`}
+                  </button>
+                )}
               </div>
             </section>
           )}
         </div>
 
-        {/* Summary */}
         <aside className="h-fit border border-line p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em]">
-            Order Summary
-          </h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em]">Order Summary</h2>
           <ul className="mt-5 space-y-3">
             {items.map((i) => (
-              <li key={i.slug} className="flex justify-between text-sm">
-                <span className="text-ink-muted">
-                  {i.name} × {i.quantity}
-                </span>
+              <li key={i.variantId} className="flex justify-between text-sm">
+                <span className="text-ink-muted">{i.name} · {i.variantLabel} × {i.quantity}</span>
                 <span>{formatPrice(i.unitPrice * i.quantity)}</span>
               </li>
             ))}
@@ -340,26 +303,15 @@ export default function CheckoutForm({
           <div className="mt-5 border-t border-line pt-5">
             <label className="label">Discount Code</label>
             <div className="flex gap-2">
-              <input
-                className="input"
-                value={couponInput}
-                onChange={(e) => setCouponInput(e.target.value)}
-                placeholder="WELCOME10"
-              />
-              <button className="btn-outline btn-sm shrink-0" onClick={applyCoupon}>
-                Apply
-              </button>
+              <input className="input" value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder="WELCOME10" />
+              <button className="btn-outline btn-sm shrink-0" onClick={applyCoupon} type="button">Apply</button>
             </div>
-            {couponMsg && (
-              <p className="mt-2 text-xs text-ink-muted">{couponMsg}</p>
-            )}
+            {couponMsg && <p className="mt-2 text-xs text-ink-muted">{couponMsg}</p>}
           </div>
 
           <dl className="mt-5 space-y-3 border-t border-line pt-5 text-sm">
             <Row label="Subtotal" value={formatPrice(subtotal)} />
-            {discount > 0 && (
-              <Row label={`Discount (${coupon?.code})`} value={`−${formatPrice(discount)}`} />
-            )}
+            {discount > 0 && <Row label={`Discount (${coupon?.code})`} value={`−${formatPrice(discount)}`} />}
             <Row label="Shipping" value={shipCost === 0 ? "Free" : formatPrice(shipCost)} />
             <Row label="Tax" value={formatPrice(tax)} />
           </dl>
@@ -373,24 +325,49 @@ export default function CheckoutForm({
   );
 }
 
+function methodLabel(m: string): string {
+  if (m === "card") return "Credit / Debit Card (Stripe)";
+  if (m === "paypal") return "PayPal";
+  return "Simulated Checkout (Demo)";
+}
+
+function MethodRow({
+  id,
+  method,
+  setMethod,
+  title,
+  note,
+}: {
+  id: string;
+  method: string;
+  setMethod: (m: string) => void;
+  title: string;
+  note: string;
+}) {
+  const active = method === id;
+  return (
+    <label className={`flex cursor-pointer items-start gap-3 border p-4 ${active ? "border-ink" : "border-line"}`}>
+      <input type="radio" name="method" checked={active} onChange={() => setMethod(id)} className="mt-1" />
+      <span>
+        <span className="block text-sm font-medium">{title}</span>
+        <span className="block text-xs text-ink-muted">{note}</span>
+      </span>
+    </label>
+  );
+}
+
 function requiredFilled(a: Address): boolean {
   return Boolean(a.recipient && a.line1 && a.city && a.state && a.zip);
 }
 
-function AddressFields({
-  value,
-  onChange,
-}: {
-  value: Address;
-  onChange: (a: Address) => void;
-}) {
+function AddressFields({ value, onChange }: { value: Address; onChange: (a: Address) => void }) {
   function set(key: keyof Address, v: string) {
     onChange({ ...value, [key]: v });
   }
   return (
     <div className="space-y-4">
       <div>
-        <label className="label">Full Name</label>
+        <label className="label">Recipient / Lab Name</label>
         <input className="input" value={value.recipient} onChange={(e) => set("recipient", e.target.value)} />
       </div>
       <div>
@@ -398,7 +375,7 @@ function AddressFields({
         <input className="input" value={value.line1} onChange={(e) => set("line1", e.target.value)} />
       </div>
       <div>
-        <label className="label">Apt / Suite (optional)</label>
+        <label className="label">Suite / Unit (optional)</label>
         <input className="input" value={value.line2} onChange={(e) => set("line2", e.target.value)} />
       </div>
       <div className="grid grid-cols-2 gap-4">
@@ -434,32 +411,18 @@ function AddressSummary({ address }: { address: Address }) {
     <div className="text-sm leading-relaxed">
       <p>{address.recipient}</p>
       <p>{address.line1}{address.line2 ? `, ${address.line2}` : ""}</p>
-      <p>
-        {address.city}, {address.state} {address.zip}
-      </p>
+      <p>{address.city}, {address.state} {address.zip}</p>
       <p>{address.country}</p>
     </div>
   );
 }
 
-function ReviewBlock({
-  title,
-  onEdit,
-  children,
-}: {
-  title: string;
-  onEdit: () => void;
-  children: React.ReactNode;
-}) {
+function ReviewBlock({ title, onEdit, children }: { title: string; onEdit: () => void; children: React.ReactNode }) {
   return (
     <div className="border border-line p-5">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
-          {title}
-        </h3>
-        <button onClick={onEdit} className="text-xs text-ink-muted underline hover:text-ink">
-          Edit
-        </button>
+        <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">{title}</h3>
+        <button onClick={onEdit} className="text-xs text-ink-muted underline hover:text-ink">Edit</button>
       </div>
       <div className="text-sm">{children}</div>
     </div>

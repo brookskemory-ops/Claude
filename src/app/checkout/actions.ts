@@ -1,43 +1,11 @@
 "use server";
 
 import { z } from "zod";
-import type { Product } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import {
-  couponDiscount,
-  effectivePrice,
-  isCouponValid,
-  round2,
-  shippingFor,
-  TAX_RATE,
-} from "@/lib/pricing";
-
-const addressSchema = z.object({
-  recipient: z.string().min(1, "Required"),
-  line1: z.string().min(1, "Required"),
-  line2: z.string().optional().default(""),
-  city: z.string().min(1, "Required"),
-  state: z.string().min(1, "Required"),
-  zip: z.string().min(1, "Required"),
-  country: z.string().min(1).default("United States"),
-  phone: z.string().optional().default(""),
-});
-
-const checkoutSchema = z.object({
-  email: z.string().email("Valid email required"),
-  items: z
-    .array(z.object({ slug: z.string(), quantity: z.number().int().positive() }))
-    .min(1, "Cart is empty"),
-  shipping: addressSchema,
-  billing: addressSchema,
-  couponCode: z.string().optional().default(""),
-  saveAddress: z.boolean().optional().default(false),
-});
-
-export type CheckoutResult =
-  | { ok: true; orderNumber: string }
-  | { ok: false; error: string };
+import { couponDiscount, isCouponValid } from "@/lib/pricing";
+import { createPendingOrder, finalizeOrder } from "@/lib/orders";
+import { stripe } from "@/lib/stripe";
 
 export async function validateCoupon(code: string, subtotal: number) {
   const coupon = await db.coupon.findUnique({
@@ -55,122 +23,83 @@ export async function validateCoupon(code: string, subtotal: number) {
   };
 }
 
-function generateOrderNumber(): string {
-  const stamp = Date.now().toString(36).toUpperCase().slice(-6);
-  const rand = Math.random().toString(36).toUpperCase().slice(2, 5);
-  return `AX-${stamp}${rand}`;
-}
+const addressSchema = z.object({
+  recipient: z.string().min(1, "Required"),
+  line1: z.string().min(1, "Required"),
+  line2: z.string().optional().default(""),
+  city: z.string().min(1, "Required"),
+  state: z.string().min(1, "Required"),
+  zip: z.string().min(1, "Required"),
+  country: z.string().min(1).default("United States"),
+  phone: z.string().optional().default(""),
+});
 
-export async function placeOrder(input: unknown): Promise<CheckoutResult> {
-  const parsed = checkoutSchema.safeParse(input);
+const submitSchema = z.object({
+  email: z.string().email("Valid email required"),
+  items: z
+    .array(z.object({ variantId: z.string(), quantity: z.number().int().positive() }))
+    .min(1, "Cart is empty"),
+  shipping: addressSchema,
+  billing: addressSchema,
+  couponCode: z.string().optional().default(""),
+  ruoAcknowledged: z.boolean(),
+  saveAddress: z.boolean().optional().default(false),
+});
+
+export type SubmitResult =
+  | { ok: true; orderId: string; number: string; total: number }
+  | { ok: false; error: string };
+
+/** Creates the PENDING order (server-recomputed totals, RUO enforced). */
+export async function submitOrder(input: unknown): Promise<SubmitResult> {
+  const parsed = submitSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid order." };
   }
-  const data = parsed.data;
+  if (!parsed.data.ruoAcknowledged) {
+    return { ok: false, error: "You must accept the Research-Use-Only terms." };
+  }
   const session = await getSession();
+  return createPendingOrder({ ...parsed.data, userId: session?.sub ?? null });
+}
 
-  // Recompute everything from the database — never trust client-supplied prices.
-  const slugs = data.items.map((i) => i.slug);
-  const products = await db.product.findMany({
-    where: { slug: { in: slugs }, active: true },
-  });
-  const bySlug = new Map(products.map((p) => [p.slug, p]));
-
-  const lineItems: { product: Product; unitPrice: number; quantity: number }[] =
-    [];
-  let subtotal = 0;
-  for (const item of data.items) {
-    const product = bySlug.get(item.slug);
-    if (!product) return { ok: false, error: `A product is no longer available.` };
-    if (product.stock < item.quantity) {
-      return { ok: false, error: `${product.name} is out of stock.` };
-    }
-    const unitPrice = effectivePrice(product);
-    subtotal = round2(subtotal + unitPrice * item.quantity);
-    lineItems.push({ product, unitPrice, quantity: item.quantity });
+/** Creates a Stripe Checkout Session for a pending order; returns the redirect URL. */
+export async function payWithStripe(
+  orderId: string,
+): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  if (!stripe) return { ok: false, error: "Stripe is not configured." };
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order || order.status !== "PENDING") {
+    return { ok: false, error: "Order is no longer available." };
   }
-
-  let discount = 0;
-  let couponCode: string | null = null;
-  if (data.couponCode.trim()) {
-    const coupon = await db.coupon.findUnique({
-      where: { code: data.couponCode.trim().toUpperCase() },
-    });
-    if (coupon && isCouponValid(coupon)) {
-      discount = couponDiscount(coupon, subtotal);
-      couponCode = coupon.code;
-    }
-  }
-
-  const discountedSubtotal = round2(subtotal - discount);
-  const shipping = shippingFor(discountedSubtotal);
-  const tax = round2(discountedSubtotal * TAX_RATE);
-  const total = round2(discountedSubtotal + shipping + tax);
-  const orderNumber = generateOrderNumber();
-
-  try {
-    await db.$transaction(async (tx) => {
-      // Guard each decrement so concurrent orders can't oversell.
-      for (const li of lineItems) {
-        const res = await tx.product.updateMany({
-          where: { id: li.product.id, stock: { gte: li.quantity } },
-          data: { stock: { decrement: li.quantity } },
-        });
-        if (res.count === 0) {
-          throw new Error(`${li.product.name} is out of stock.`);
-        }
-      }
-
-      await tx.order.create({
-        data: {
-          number: orderNumber,
-          userId: session?.sub ?? null,
-          email: data.email,
-          status: "PAID",
-          subtotal,
-          discount,
-          shipping,
-          tax,
-          total,
-          couponCode,
-          shippingAddress: JSON.stringify(data.shipping),
-          billingAddress: JSON.stringify(data.billing),
-          items: {
-            create: lineItems.map((li) => ({
-              productId: li.product.id,
-              name: li.product.name,
-              slug: li.product.slug,
-              imageKey: li.product.imageKey,
-              unitPrice: li.unitPrice,
-              quantity: li.quantity,
-            })),
-          },
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  // Single consolidated line item keeps the charged amount exactly equal to our
+  // server-computed total (incl. discount, shipping, tax).
+  const session = await stripe.checkout.sessions.create({
+    mode: "payment",
+    customer_email: order.email,
+    line_items: [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: Math.round(order.total * 100),
+          product_data: { name: `Axevia Order ${order.number}` },
         },
-      });
+      },
+    ],
+    metadata: { orderId: order.id },
+    success_url: `${site}/checkout/complete?order=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${site}/checkout`,
+  });
+  return session.url
+    ? { ok: true, url: session.url }
+    : { ok: false, error: "Could not start Stripe checkout." };
+}
 
-      if (session && data.saveAddress) {
-        await tx.address.create({
-          data: {
-            userId: session.sub,
-            label: "Shipping",
-            recipient: data.shipping.recipient,
-            line1: data.shipping.line1,
-            line2: data.shipping.line2 || null,
-            city: data.shipping.city,
-            state: data.shipping.state,
-            zip: data.shipping.zip,
-            country: data.shipping.country,
-            phone: data.shipping.phone || null,
-          },
-        });
-      }
-    });
-  } catch (err) {
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Could not place order.",
-    };
-  }
-
-  return { ok: true, orderNumber };
+/** Finalizes an order paid via the built-in simulated method (no payment keys set). */
+export async function finalizeSimulated(
+  orderId: string,
+): Promise<{ ok: true; number: string } | { ok: false; error: string }> {
+  return finalizeOrder(orderId, { provider: "simulated" });
 }

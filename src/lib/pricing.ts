@@ -64,3 +64,17 @@ export function shippingFor(subtotalAfterDiscount: number): number {
 export function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
+
+/** Lowest effective (sale-aware) price across a product's variants. */
+export function minEffectivePrice(variants: SalePricing[]): number {
+  if (!variants.length) return 0;
+  return Math.min(...variants.map(effectivePrice));
+}
+
+export function anyOnSale(variants: SalePricing[]): boolean {
+  return variants.some(isOnSale);
+}
+
+export function totalStock(variants: { stock: number }[]): number {
+  return variants.reduce((sum, v) => sum + v.stock, 0);
+}

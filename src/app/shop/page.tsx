@@ -5,13 +5,12 @@ import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
 import { CATEGORIES } from "@/lib/types";
 
-export const metadata: Metadata = { title: "Shop" };
+export const metadata: Metadata = { title: "Catalog" };
 
 const SORTS: Record<string, Prisma.ProductOrderByWithRelationInput> = {
   featured: { featured: "desc" },
-  "price-asc": { price: "asc" },
-  "price-desc": { price: "desc" },
   newest: { createdAt: "desc" },
+  name: { name: "asc" },
 };
 
 export default async function ShopPage({
@@ -25,10 +24,9 @@ export default async function ShopPage({
   const products = await db.product.findMany({
     where: {
       active: true,
-      ...(category && CATEGORIES.includes(category as never)
-        ? { category }
-        : {}),
+      ...(category && CATEGORIES.includes(category as never) ? { category } : {}),
     },
+    include: { variants: { where: { active: true }, orderBy: { sortOrder: "asc" } } },
     orderBy: SORTS[sort] ?? SORTS.featured,
   });
 
@@ -43,11 +41,11 @@ export default async function ShopPage({
   return (
     <div className="container-site py-12">
       <header className="mb-10">
-        <p className="eyebrow">All Products</p>
-        <h1 className="mt-2 text-4xl font-bold tracking-tight">Shop Axevia</h1>
+        <p className="eyebrow">Catalog</p>
+        <h1 className="mt-2 text-4xl font-bold tracking-tight">Research Peptides</h1>
         <p className="mt-3 max-w-xl text-ink-muted">
-          Precision-dosed formulas across protein, performance, and daily
-          wellness. Every product, fully disclosed.
+          High-purity, third-party tested compounds for laboratory research use only. Certificate
+          of Analysis included with every order.
         </p>
       </header>
 
@@ -55,12 +53,7 @@ export default async function ShopPage({
         <nav className="flex flex-wrap gap-2">
           <CategoryTab href={tabHref()} label="All" active={!category} />
           {CATEGORIES.map((cat) => (
-            <CategoryTab
-              key={cat}
-              href={tabHref(cat)}
-              label={cat}
-              active={category === cat}
-            />
+            <CategoryTab key={cat} href={tabHref(cat)} label={cat} active={category === cat} />
           ))}
         </nav>
 
@@ -76,19 +69,14 @@ export default async function ShopPage({
           >
             <option value="featured">Featured</option>
             <option value="newest">Newest</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
+            <option value="name">A–Z</option>
           </select>
-          <button type="submit" className="btn-outline btn-sm">
-            Apply
-          </button>
+          <button type="submit" className="btn-outline btn-sm">Apply</button>
         </form>
       </div>
 
       {products.length === 0 ? (
-        <p className="py-20 text-center text-ink-muted">
-          No products in this category yet.
-        </p>
+        <p className="py-20 text-center text-ink-muted">No products in this category yet.</p>
       ) : (
         <div className="mt-10 grid grid-cols-2 gap-6 lg:grid-cols-4">
           {products.map((product) => (

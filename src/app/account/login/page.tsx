@@ -16,16 +16,18 @@ export default function LoginPage() {
         <Suspense>
           <LoginForm />
         </Suspense>
-        <p className="mt-6 text-sm text-ink-muted">
-          New to Axevia?{" "}
+        <div className="mt-4 flex justify-between text-sm">
           <Link href="/account/register" className="font-semibold text-ink underline">
             Create an account
           </Link>
-        </p>
+          <Link href="/account/forgot" className="text-ink-muted underline hover:text-ink">
+            Forgot password?
+          </Link>
+        </div>
         <div className="mt-8 border border-line bg-paper-soft p-4 text-xs text-ink-muted">
           <p className="font-semibold uppercase tracking-[0.14em]">Demo accounts</p>
           <p className="mt-2">Admin — admin@axevia.com / admin123</p>
-          <p>Customer — customer@example.com / password123</p>
+          <p>Customer — researcher@example.com / password123</p>
         </div>
       </div>
     </div>

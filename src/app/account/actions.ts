@@ -1,5 +1,6 @@
 "use server";
 
+import crypto from "crypto";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
@@ -10,8 +11,20 @@ import {
   requireUser,
   verifyPassword,
 } from "@/lib/auth";
+import { sendPasswordReset, sendVerification } from "@/lib/email";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
-export type AuthResult = { ok: false; error: string } | { ok: true };
+export type AuthResult = { ok: false; error: string } | { ok: true; message?: string };
+
+function makeToken() {
+  const raw = crypto.randomBytes(32).toString("hex");
+  const hash = crypto.createHash("sha256").update(raw).digest("hex");
+  return { raw, hash };
+}
+
+function siteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+}
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -19,6 +32,9 @@ const loginSchema = z.object({
 });
 
 export async function login(_prev: AuthResult | null, formData: FormData): Promise<AuthResult> {
+  const limit = rateLimit(`login:${clientIp()}`, 8, 60_000);
+  if (!limit.ok) return { ok: false, error: "Too many attempts. Try again shortly." };
+
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -46,6 +62,9 @@ const registerSchema = z.object({
 });
 
 export async function register(_prev: AuthResult | null, formData: FormData): Promise<AuthResult> {
+  const limit = rateLimit(`register:${clientIp()}`, 5, 60_000);
+  if (!limit.ok) return { ok: false, error: "Too many attempts. Try again shortly." };
+
   const parsed = registerSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -56,8 +75,9 @@ export async function register(_prev: AuthResult | null, formData: FormData): Pr
   }
 
   const email = parsed.data.email.toLowerCase();
-  const existing = await db.user.findUnique({ where: { email } });
-  if (existing) return { ok: false, error: "An account with that email already exists." };
+  if (await db.user.findUnique({ where: { email } })) {
+    return { ok: false, error: "An account with that email already exists." };
+  }
 
   const user = await db.user.create({
     data: {
@@ -68,18 +88,80 @@ export async function register(_prev: AuthResult | null, formData: FormData): Pr
     },
   });
 
-  await createSession({
-    sub: user.id,
-    email: user.email,
-    name: user.name,
-    role: "CUSTOMER",
+  // Send a verification email (non-blocking for access).
+  const { raw, hash } = makeToken();
+  await db.verificationToken.create({
+    data: { userId: user.id, tokenHash: hash, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24) },
   });
+  await sendVerification({ to: email, verifyUrl: `${siteUrl()}/account/verify?token=${raw}` });
+
+  await createSession({ sub: user.id, email: user.email, name: user.name, role: "CUSTOMER" });
   return { ok: true };
 }
 
 export async function logout() {
   destroySession();
   redirect("/");
+}
+
+const emailSchema = z.object({ email: z.string().email() });
+
+export async function requestPasswordReset(_prev: AuthResult | null, formData: FormData): Promise<AuthResult> {
+  const limit = rateLimit(`reset:${clientIp()}`, 5, 60_000);
+  if (!limit.ok) return { ok: false, error: "Too many requests. Try again shortly." };
+
+  const parsed = emailSchema.safeParse({ email: formData.get("email") });
+  // Always respond success to avoid leaking which emails exist.
+  const generic: AuthResult = {
+    ok: true,
+    message: "If an account exists for that email, a reset link is on its way.",
+  };
+  if (!parsed.success) return generic;
+
+  const user = await db.user.findUnique({ where: { email: parsed.data.email.toLowerCase() } });
+  if (user) {
+    const { raw, hash } = makeToken();
+    await db.passwordResetToken.create({
+      data: { userId: user.id, tokenHash: hash, expiresAt: new Date(Date.now() + 1000 * 60 * 60) },
+    });
+    await sendPasswordReset({ to: user.email, resetUrl: `${siteUrl()}/account/reset?token=${raw}` });
+  }
+  return generic;
+}
+
+const resetSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export async function resetPassword(_prev: AuthResult | null, formData: FormData): Promise<AuthResult> {
+  const parsed = resetSchema.safeParse({
+    token: formData.get("token"),
+    password: formData.get("password"),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid request." };
+  }
+
+  const hash = crypto.createHash("sha256").update(parsed.data.token).digest("hex");
+  const token = await db.passwordResetToken.findUnique({ where: { tokenHash: hash }, include: { user: true } });
+  if (!token || token.usedAt || token.expiresAt < new Date()) {
+    return { ok: false, error: "This reset link is invalid or has expired." };
+  }
+
+  await db.user.update({
+    where: { id: token.userId },
+    data: { passwordHash: await hashPassword(parsed.data.password) },
+  });
+  await db.passwordResetToken.update({ where: { id: token.id }, data: { usedAt: new Date() } });
+
+  await createSession({
+    sub: token.user.id,
+    email: token.user.email,
+    name: token.user.name,
+    role: token.user.role === "ADMIN" ? "ADMIN" : "CUSTOMER",
+  });
+  return { ok: true };
 }
 
 const addressSchema = z.object({
@@ -102,7 +184,7 @@ export async function addAddress(_prev: AuthResult | null, formData: FormData): 
   await db.address.create({
     data: {
       userId: session.sub,
-      label: "Address",
+      label: "Lab",
       recipient: parsed.data.recipient,
       line1: parsed.data.line1,
       line2: parsed.data.line2 || null,

@@ -3,156 +3,124 @@ import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
 
+// Example/template products to demonstrate the structure. Replace or remove these
+// from /admin and add your real catalog. All entries are Research Use Only.
 const products = [
   {
-    slug: "apex-whey-protein",
-    name: "Apex Whey Protein",
-    tagline: "25g protein per scoop",
-    category: "Protein",
-    price: 54.99,
-    salePrice: 44.99,
-    saleEndsAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+    slug: "example-bpc-157",
+    name: "BPC-157",
+    tagline: "[EXAMPLE] Body Protection Compound — research peptide",
+    category: "Regenerative",
     description:
-      "A clean, fast-absorbing whey protein isolate built for lean muscle and recovery. Low in sugar, mixes instantly, and finishes smooth.",
-    ingredients:
-      "Whey Protein Isolate, Natural Cocoa, Sunflower Lecithin, Sea Salt, Stevia Leaf Extract.",
-    servings: "30 servings",
-    stock: 120,
+      "Example catalog entry. Lyophilized research peptide for in-vitro and laboratory research use only. Not for human or veterinary use. Replace this product with your own from the admin panel.",
+    purity: "≥99%",
+    form: "Lyophilized powder",
+    casNumber: "137525-51-0",
+    molecularFormula: "C62H98N16O22",
+    molecularWeight: "1419.6 g/mol",
+    sequence: "Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val",
+    storage: "Store lyophilized at -20°C, protected from light.",
+    coaUrl: "",
     featured: true,
-    imageKey: "protein",
+    imageKey: "vial",
+    variants: [
+      { label: "5mg", sku: "BPC157-5", price: 39.99, stock: 60, sortOrder: 0 },
+      { label: "10mg", sku: "BPC157-10", price: 64.99, salePrice: 54.99, stock: 40, sortOrder: 1 },
+    ],
   },
   {
-    slug: "ignite-pre-workout",
-    name: "Ignite Pre-Workout",
-    tagline: "Clean energy, zero crash",
-    category: "Pre-Workout",
-    price: 42.0,
+    slug: "example-tb-500",
+    name: "TB-500 (Thymosin β4 Fragment)",
+    tagline: "[EXAMPLE] research peptide",
+    category: "Regenerative",
     description:
-      "Sharp focus and sustained energy without the jitters. Formulated with caffeine, L-citrulline, and beta-alanine for serious training sessions.",
-    ingredients:
-      "L-Citrulline, Beta-Alanine, Caffeine Anhydrous, L-Theanine, Taurine, Electrolyte Blend.",
-    servings: "25 servings",
-    stock: 80,
+      "Example catalog entry. Lyophilized research peptide for laboratory research use only. Not for human or veterinary use. Replace with your own products via the admin panel.",
+    purity: "≥98%",
+    form: "Lyophilized powder",
+    casNumber: "77591-33-4",
+    molecularFormula: "C212H350N56O78S",
+    molecularWeight: "4963.4 g/mol",
+    sequence: "",
+    storage: "Store lyophilized at -20°C, protected from light.",
+    coaUrl: "",
     featured: true,
-    imageKey: "preworkout",
+    imageKey: "vial",
+    variants: [
+      { label: "5mg", sku: "TB500-5", price: 44.99, stock: 35, sortOrder: 0 },
+      { label: "10mg", sku: "TB500-10", price: 74.99, stock: 8, sortOrder: 1 },
+    ],
   },
   {
-    slug: "core-creatine-monohydrate",
-    name: "Core Creatine Monohydrate",
-    tagline: "5g micronized creatine",
-    category: "Creatine",
-    price: 29.99,
+    slug: "example-ghk-cu",
+    name: "GHK-Cu",
+    tagline: "[EXAMPLE] Copper Peptide — research grade",
+    category: "Cosmetic",
     description:
-      "Pure micronized creatine monohydrate for strength, power, and lean mass. Unflavored and dissolves cleanly into any drink.",
-    ingredients: "100% Micronized Creatine Monohydrate.",
-    servings: "60 servings",
-    stock: 200,
+      "Example catalog entry. Lyophilized copper tripeptide for laboratory research use only. Not for human or veterinary use. Replace with your own products via the admin panel.",
+    purity: "≥99%",
+    form: "Lyophilized powder",
+    casNumber: "49557-75-7",
+    molecularFormula: "C14H24N6O4·Cu",
+    molecularWeight: "403.9 g/mol",
+    sequence: "Gly-His-Lys (Cu²⁺)",
+    storage: "Store lyophilized at -20°C, protected from light.",
+    coaUrl: "",
     featured: true,
-    imageKey: "creatine",
+    imageKey: "vial",
+    variants: [
+      { label: "50mg", sku: "GHKCU-50", price: 34.99, stock: 50, sortOrder: 0 },
+      { label: "100mg", sku: "GHKCU-100", price: 54.99, stock: 0, sortOrder: 1 },
+    ],
   },
   {
-    slug: "daily-multivitamin",
-    name: "Daily Multivitamin",
-    tagline: "Complete A–Z coverage",
-    category: "Vitamins",
-    price: 24.99,
+    slug: "example-bacteriostatic-water",
+    name: "Bacteriostatic Water",
+    tagline: "[EXAMPLE] Lab reconstitution solvent",
+    category: "Lab Supplies",
     description:
-      "A comprehensive daily multivitamin covering essential vitamins and minerals to fill nutritional gaps and support overall wellness.",
-    ingredients:
-      "Vitamins A, C, D3, E, K, B-Complex, Magnesium, Zinc, Selenium, Iodine.",
-    servings: "90 capsules",
-    stock: 150,
+      "Example catalog entry. Laboratory-grade solvent for research reconstitution use only. Not for human or veterinary use.",
+    purity: "USP grade",
+    form: "Sterile solution",
+    casNumber: "7732-18-5",
+    molecularFormula: "H2O (0.9% benzyl alcohol)",
+    molecularWeight: "",
+    sequence: "",
+    storage: "Store at room temperature.",
+    coaUrl: "",
     featured: false,
-    imageKey: "vitamins",
-  },
-  {
-    slug: "restore-recovery-blend",
-    name: "Restore Recovery Blend",
-    tagline: "BCAA + electrolytes",
-    category: "Recovery",
-    price: 38.5,
-    salePrice: 30.0,
-    saleEndsAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14),
-    description:
-      "Refuel and rehydrate post-training with a balanced ratio of branched-chain amino acids and replenishing electrolytes.",
-    ingredients:
-      "L-Leucine, L-Isoleucine, L-Valine, Coconut Water Powder, Potassium, Sodium.",
-    servings: "40 servings",
-    stock: 60,
-    featured: true,
-    imageKey: "recovery",
-  },
-  {
-    slug: "vital-greens",
-    name: "Vital Greens",
-    tagline: "Superfood greens blend",
-    category: "Greens",
-    price: 49.0,
-    description:
-      "A nutrient-dense blend of greens, adaptogens, and probiotics to support digestion, energy, and daily nutrition in one scoop.",
-    ingredients:
-      "Spirulina, Chlorella, Wheatgrass, Spinach, Ashwagandha, Probiotic Blend, Digestive Enzymes.",
-    servings: "30 servings",
-    stock: 45,
-    featured: false,
-    imageKey: "greens",
-  },
-  {
-    slug: "casein-night-protein",
-    name: "Casein Night Protein",
-    tagline: "Slow-release overnight",
-    category: "Protein",
-    price: 52.0,
-    description:
-      "A slow-digesting micellar casein that feeds muscles through the night to support overnight recovery and reduce muscle breakdown.",
-    ingredients:
-      "Micellar Casein, Natural Vanilla, Sunflower Lecithin, Sea Salt, Stevia Leaf Extract.",
-    servings: "28 servings",
-    stock: 8,
-    featured: false,
-    imageKey: "protein",
-  },
-  {
-    slug: "omega-3-fish-oil",
-    name: "Omega-3 Fish Oil",
-    tagline: "High-potency EPA/DHA",
-    category: "Vitamins",
-    price: 27.5,
-    description:
-      "Ultra-pure omega-3 fish oil delivering a potent dose of EPA and DHA to support heart, brain, and joint health.",
-    ingredients: "Fish Oil Concentrate (EPA 800mg, DHA 600mg), Vitamin E.",
-    servings: "120 softgels",
-    stock: 0,
-    featured: false,
-    imageKey: "vitamins",
+    imageKey: "solvent",
+    variants: [
+      { label: "10mL", sku: "BACWATER-10", price: 12.99, stock: 200, sortOrder: 0 },
+      { label: "30mL", sku: "BACWATER-30", price: 24.99, stock: 120, sortOrder: 1 },
+    ],
   },
 ];
 
 async function main() {
   console.log("Seeding database...");
 
-  const adminPassword = await bcrypt.hash("admin123", 10);
-  const customerPassword = await bcrypt.hash("password123", 10);
-
+  const now = new Date();
   await db.user.upsert({
     where: { email: "admin@axevia.com" },
     update: {},
     create: {
       email: "admin@axevia.com",
       name: "Axevia Admin",
-      passwordHash: adminPassword,
+      passwordHash: await bcrypt.hash("admin123", 10),
       role: "ADMIN",
+      emailVerified: now,
     },
   });
 
   const customer = await db.user.upsert({
-    where: { email: "customer@example.com" },
+    where: { email: "researcher@example.com" },
     update: {},
     create: {
-      email: "customer@example.com",
-      name: "Jordan Rivera",
-      passwordHash: customerPassword,
+      email: "researcher@example.com",
+      name: "Dr. Jordan Rivera",
+      passwordHash: await bcrypt.hash("password123", 10),
       role: "CUSTOMER",
+      emailVerified: now,
     },
   });
 
@@ -160,9 +128,9 @@ async function main() {
   await db.address.create({
     data: {
       userId: customer.id,
-      label: "Home",
-      recipient: "Jordan Rivera",
-      line1: "123 Granite Ave",
+      label: "Lab",
+      recipient: "Rivera Research Lab",
+      line1: "500 Science Park Dr",
       city: "Austin",
       state: "TX",
       zip: "78701",
@@ -172,11 +140,16 @@ async function main() {
   });
 
   for (const p of products) {
-    await db.product.upsert({
+    const { variants, ...data } = p;
+    const product = await db.product.upsert({
       where: { slug: p.slug },
-      update: p,
-      create: p,
+      update: data,
+      create: data,
     });
+    await db.productVariant.deleteMany({ where: { productId: product.id } });
+    for (const v of variants) {
+      await db.productVariant.create({ data: { ...v, productId: product.id } });
+    }
   }
 
   await db.coupon.upsert({
@@ -184,7 +157,6 @@ async function main() {
     update: {},
     create: { code: "WELCOME10", percentOff: 10, active: true },
   });
-
   await db.coupon.upsert({
     where: { code: "AXEVIA20" },
     update: {},
@@ -193,7 +165,7 @@ async function main() {
 
   console.log("Seed complete.");
   console.log("  Admin:    admin@axevia.com / admin123");
-  console.log("  Customer: customer@example.com / password123");
+  console.log("  Customer: researcher@example.com / password123");
 }
 
 main()

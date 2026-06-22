@@ -17,14 +17,9 @@ export default function CartDrawer({
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
 
   return (
-    <div
-      className={`fixed inset-0 z-50 ${open ? "" : "pointer-events-none"}`}
-      aria-hidden={!open}
-    >
+    <div className={`fixed inset-0 z-50 ${open ? "" : "pointer-events-none"}`} aria-hidden={!open}>
       <div
-        className={`absolute inset-0 bg-ink/40 transition-opacity ${
-          open ? "opacity-100" : "opacity-0"
-        }`}
+        className={`absolute inset-0 bg-ink/40 transition-opacity ${open ? "opacity-100" : "opacity-0"}`}
         onClick={onClose}
       />
       <aside
@@ -33,9 +28,7 @@ export default function CartDrawer({
         }`}
       >
         <div className="flex items-center justify-between border-b border-line px-6 py-4">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em]">
-            Your Cart
-          </h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em]">Your Cart</h2>
           <button onClick={onClose} aria-label="Close cart" className="text-ink-muted hover:text-ink">
             ✕
           </button>
@@ -45,7 +38,7 @@ export default function CartDrawer({
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="text-sm text-ink-muted">Your cart is empty.</p>
             <Link href="/shop" onClick={onClose} className="btn-outline btn-sm">
-              Browse Products
+              Browse Catalog
             </Link>
           </div>
         ) : (
@@ -62,47 +55,28 @@ export default function CartDrawer({
               )}
               <ul className="divide-y divide-line">
                 {items.map((item) => (
-                  <li key={item.slug} className="flex gap-4 py-4">
+                  <li key={item.variantId} className="flex gap-4 py-4">
                     <div className="h-20 w-20 shrink-0 border border-line">
-                      <ProductImage
-                        imageKey={item.imageKey}
-                        name={item.name}
-                        className="h-full w-full"
-                      />
+                      <ProductImage imageKey={item.imageKey} name={item.name} className="h-full w-full" />
                     </div>
                     <div className="flex flex-1 flex-col">
                       <div className="flex justify-between gap-2">
-                        <Link
-                          href={`/product/${item.slug}`}
-                          onClick={onClose}
-                          className="text-sm font-medium hover:underline"
-                        >
-                          {item.name}
-                        </Link>
-                        <button
-                          onClick={() => removeItem(item.slug)}
-                          className="text-xs text-ink-muted hover:text-ink"
-                        >
+                        <div>
+                          <Link href={`/product/${item.slug}`} onClick={onClose} className="text-sm font-medium hover:underline">
+                            {item.name}
+                          </Link>
+                          <p className="text-xs text-ink-muted">{item.variantLabel}</p>
+                        </div>
+                        <button onClick={() => removeItem(item.variantId)} className="text-xs text-ink-muted hover:text-ink">
                           Remove
                         </button>
                       </div>
-                      <p className="mt-1 text-xs text-ink-muted">
-                        {formatPrice(item.unitPrice)}
-                      </p>
+                      <p className="mt-1 text-xs text-ink-muted">{formatPrice(item.unitPrice)}</p>
                       <div className="mt-auto flex items-center gap-2 pt-2">
+                        <QtyButton onClick={() => updateQuantity(item.variantId, item.quantity - 1)} label="−" />
+                        <span className="w-8 text-center text-sm">{item.quantity}</span>
                         <QtyButton
-                          onClick={() =>
-                            updateQuantity(item.slug, item.quantity - 1)
-                          }
-                          label="−"
-                        />
-                        <span className="w-8 text-center text-sm">
-                          {item.quantity}
-                        </span>
-                        <QtyButton
-                          onClick={() =>
-                            updateQuantity(item.slug, item.quantity + 1)
-                          }
+                          onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                           label="+"
                           disabled={item.quantity >= item.maxStock}
                         />
@@ -115,9 +89,7 @@ export default function CartDrawer({
 
             <div className="border-t border-line px-6 py-5">
               <div className="mb-4 flex items-center justify-between text-sm">
-                <span className="uppercase tracking-[0.14em] text-ink-muted">
-                  Subtotal
-                </span>
+                <span className="uppercase tracking-[0.14em] text-ink-muted">Subtotal</span>
                 <span className="font-semibold">{formatPrice(subtotal)}</span>
               </div>
               <div className="flex flex-col gap-2">

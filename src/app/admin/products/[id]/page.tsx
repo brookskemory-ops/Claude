@@ -8,7 +8,10 @@ export default async function EditProductPage({
 }: {
   params: { id: string };
 }) {
-  const product = await db.product.findUnique({ where: { id: params.id } });
+  const product = await db.product.findUnique({
+    where: { id: params.id },
+    include: { variants: { orderBy: { sortOrder: "asc" } } },
+  });
   if (!product) notFound();
 
   const action = updateProduct.bind(null, product.id);
@@ -18,7 +21,12 @@ export default async function EditProductPage({
       <h2 className="mb-6 text-sm font-semibold uppercase tracking-[0.18em]">
         Edit · {product.name}
       </h2>
-      <ProductForm action={action} product={product} submitLabel="Save Changes" />
+      <ProductForm
+        action={action}
+        product={product}
+        variants={product.variants}
+        submitLabel="Save Changes"
+      />
     </div>
   );
 }

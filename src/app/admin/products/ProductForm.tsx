@@ -1,46 +1,92 @@
 "use client";
 
+import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
-import type { Product } from "@prisma/client";
+import type { Product, ProductVariant } from "@prisma/client";
 import { CATEGORIES } from "@/lib/types";
 import type { FormResult } from "../actions";
 
-const IMAGE_KEYS = [
-  "protein",
-  "preworkout",
-  "creatine",
-  "vitamins",
-  "recovery",
-  "greens",
-  "default",
-];
+const IMAGE_KEYS = ["vial", "solvent", "default"];
 
 type Action = (prev: FormResult | null, formData: FormData) => Promise<FormResult>;
+
+type VariantRow = {
+  label: string;
+  sku: string;
+  price: string;
+  salePrice: string;
+  stock: string;
+  lowStockThreshold: string;
+  active: boolean;
+};
+
+function toRow(v: ProductVariant): VariantRow {
+  return {
+    label: v.label,
+    sku: v.sku,
+    price: String(v.price),
+    salePrice: v.salePrice != null ? String(v.salePrice) : "",
+    stock: String(v.stock),
+    lowStockThreshold: String(v.lowStockThreshold),
+    active: v.active,
+  };
+}
+
+const BLANK_ROW: VariantRow = {
+  label: "",
+  sku: "",
+  price: "",
+  salePrice: "",
+  stock: "0",
+  lowStockThreshold: "10",
+  active: true,
+};
 
 export default function ProductForm({
   action,
   product,
+  variants,
   submitLabel,
 }: {
   action: Action;
   product?: Product;
+  variants?: ProductVariant[];
   submitLabel: string;
 }) {
   const [state, formAction] = useFormState(action, null);
+  const [rows, setRows] = useState<VariantRow[]>(
+    variants && variants.length ? variants.map(toRow) : [{ ...BLANK_ROW }],
+  );
 
-  function dateValue(d: Date | null | undefined) {
-    if (!d) return "";
-    return new Date(d).toISOString().slice(0, 10);
+  function updateRow(i: number, patch: Partial<VariantRow>) {
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+  function addRow() {
+    setRows((prev) => [...prev, { ...BLANK_ROW }]);
+  }
+  function removeRow(i: number) {
+    setRows((prev) => (prev.length > 1 ? prev.filter((_, idx) => idx !== i) : prev));
   }
 
+  const variantsJson = JSON.stringify(
+    rows.map((r) => ({
+      label: r.label,
+      sku: r.sku,
+      price: r.price,
+      salePrice: r.salePrice,
+      stock: r.stock,
+      lowStockThreshold: r.lowStockThreshold,
+      active: r.active,
+    })),
+  );
+
   return (
-    <form action={formAction} className="max-w-2xl space-y-6">
+    <form action={formAction} className="max-w-3xl space-y-6">
       {state && !state.ok && (
-        <p className="border border-ink bg-paper-muted px-4 py-3 text-sm">
-          {state.error}
-        </p>
+        <p className="border border-ink bg-paper-muted px-4 py-3 text-sm">{state.error}</p>
       )}
+      <input type="hidden" name="variants" value={variantsJson} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name" required>
@@ -55,28 +101,16 @@ export default function ProductForm({
         <input name="tagline" className="input" defaultValue={product?.tagline} />
       </Field>
 
-      <Field label="Category" required>
-        <select name="category" className="input" defaultValue={product?.category ?? CATEGORIES[0]}>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-      </Field>
-
-      <Field label="Description" required>
-        <textarea name="description" rows={4} className="input" defaultValue={product?.description} required />
-      </Field>
-
-      <Field label="Ingredients">
-        <textarea name="ingredients" rows={2} className="input" defaultValue={product?.ingredients} />
-      </Field>
-
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Servings / Size">
-          <input name="servings" className="input" defaultValue={product?.servings} placeholder="30 servings" />
+        <Field label="Category" required>
+          <select name="category" className="input" defaultValue={product?.category ?? CATEGORIES[0]}>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Image Style">
-          <select name="imageKey" className="input" defaultValue={product?.imageKey ?? "default"}>
+          <select name="imageKey" className="input" defaultValue={product?.imageKey ?? "vial"}>
             {IMAGE_KEYS.map((k) => (
               <option key={k} value={k}>{k}</option>
             ))}
@@ -84,26 +118,66 @@ export default function ProductForm({
         </Field>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Field label="Price ($)" required>
-          <input name="price" type="number" step="0.01" min="0" className="input" defaultValue={product?.price} required />
-        </Field>
-        <Field label="Sale Price ($)">
-          <input name="salePrice" type="number" step="0.01" min="0" className="input" defaultValue={product?.salePrice ?? ""} placeholder="none" />
-        </Field>
-        <Field label="Sale Ends">
-          <input name="saleEndsAt" type="date" className="input" defaultValue={dateValue(product?.saleEndsAt)} />
-        </Field>
-      </div>
+      <Field label="Description" required>
+        <textarea name="description" rows={3} className="input" defaultValue={product?.description} required />
+      </Field>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Stock" required>
-          <input name="stock" type="number" min="0" className="input" defaultValue={product?.stock ?? 0} required />
+      {/* Peptide specifications */}
+      <fieldset className="border border-line p-4">
+        <legend className="px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          Specifications
+        </legend>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Purity">
+            <input name="purity" className="input" defaultValue={product?.purity} placeholder="≥99%" />
+          </Field>
+          <Field label="Form">
+            <input name="form" className="input" defaultValue={product?.form ?? "Lyophilized powder"} />
+          </Field>
+          <Field label="CAS Number">
+            <input name="casNumber" className="input" defaultValue={product?.casNumber} />
+          </Field>
+          <Field label="Molecular Formula">
+            <input name="molecularFormula" className="input" defaultValue={product?.molecularFormula} />
+          </Field>
+          <Field label="Molecular Weight">
+            <input name="molecularWeight" className="input" defaultValue={product?.molecularWeight} />
+          </Field>
+          <Field label="Storage">
+            <input name="storage" className="input" defaultValue={product?.storage} placeholder="Store at -20°C" />
+          </Field>
+        </div>
+        <Field label="Sequence (optional)">
+          <input name="sequence" className="input" defaultValue={product?.sequence} />
         </Field>
-        <Field label="Low Stock Threshold">
-          <input name="lowStockThreshold" type="number" min="0" className="input" defaultValue={product?.lowStockThreshold ?? 10} />
+        <Field label="Certificate of Analysis URL (optional)">
+          <input name="coaUrl" className="input" defaultValue={product?.coaUrl} placeholder="https://…" />
         </Field>
-      </div>
+      </fieldset>
+
+      {/* Variants */}
+      <fieldset className="border border-line p-4">
+        <legend className="px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+          Sizes / Variants
+        </legend>
+        <div className="space-y-3">
+          {rows.map((row, i) => (
+            <div key={i} className="grid grid-cols-2 gap-2 border-b border-line pb-3 sm:grid-cols-12">
+              <input className="input sm:col-span-2" placeholder="Size (10mg)" value={row.label} onChange={(e) => updateRow(i, { label: e.target.value })} />
+              <input className="input sm:col-span-3" placeholder="SKU" value={row.sku} onChange={(e) => updateRow(i, { sku: e.target.value })} />
+              <input className="input sm:col-span-2" placeholder="Price" type="number" step="0.01" value={row.price} onChange={(e) => updateRow(i, { price: e.target.value })} />
+              <input className="input sm:col-span-2" placeholder="Sale" type="number" step="0.01" value={row.salePrice} onChange={(e) => updateRow(i, { salePrice: e.target.value })} />
+              <input className="input sm:col-span-2" placeholder="Stock" type="number" value={row.stock} onChange={(e) => updateRow(i, { stock: e.target.value })} />
+              <button type="button" onClick={() => removeRow(i)} className="text-xs text-ink-muted underline hover:text-ink sm:col-span-1">
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={addRow} className="btn-outline btn-sm mt-3">
+          + Add Size
+        </button>
+      </fieldset>
 
       <div className="flex gap-8">
         <label className="flex items-center gap-2 text-sm">
@@ -124,15 +198,7 @@ export default function ProductForm({
   );
 }
 
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
       <label className="label">

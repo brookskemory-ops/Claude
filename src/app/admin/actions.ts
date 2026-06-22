@@ -8,12 +8,22 @@ import { requireAdmin } from "@/lib/auth";
 import { CATEGORIES, ORDER_STATUSES } from "@/lib/types";
 
 function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return input.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
+
+export type FormResult = { ok: false; error: string } | { ok: true };
+
+const variantSchema = z.object({
+  label: z.string().min(1, "Variant size is required"),
+  sku: z.string().min(1, "SKU is required"),
+  price: z.coerce.number().positive("Price must be positive"),
+  salePrice: z.union([z.coerce.number(), z.literal("")]).optional(),
+  saleEndsAt: z.string().optional(),
+  stock: z.coerce.number().int().min(0),
+  lowStockThreshold: z.coerce.number().int().min(0).default(10),
+  active: z.boolean().default(true),
+  sortOrder: z.coerce.number().int().default(0),
+});
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -21,71 +31,104 @@ const productSchema = z.object({
   tagline: z.string().optional().default(""),
   category: z.enum(CATEGORIES),
   description: z.string().min(1, "Description is required"),
-  ingredients: z.string().optional().default(""),
-  servings: z.string().optional().default(""),
-  price: z.coerce.number().positive("Price must be positive"),
-  salePrice: z.coerce.number().optional(),
-  saleEndsAt: z.string().optional(),
-  stock: z.coerce.number().int().min(0),
-  lowStockThreshold: z.coerce.number().int().min(0).default(10),
-  imageKey: z.string().default("default"),
-  featured: z.coerce.boolean().default(false),
-  active: z.coerce.boolean().default(true),
+  purity: z.string().optional().default(""),
+  form: z.string().optional().default("Lyophilized powder"),
+  casNumber: z.string().optional().default(""),
+  molecularFormula: z.string().optional().default(""),
+  molecularWeight: z.string().optional().default(""),
+  sequence: z.string().optional().default(""),
+  storage: z.string().optional().default(""),
+  coaUrl: z.string().optional().default(""),
+  imageKey: z.string().default("vial"),
+  featured: z.boolean().default(false),
+  active: z.boolean().default(true),
+  variants: z.array(variantSchema).min(1, "Add at least one size/variant"),
 });
 
-function parseProductForm(formData: FormData) {
-  const raw = {
+function parseForm(formData: FormData) {
+  let variants: unknown = [];
+  try {
+    variants = JSON.parse(String(formData.get("variants") || "[]"));
+  } catch {
+    variants = [];
+  }
+  return productSchema.safeParse({
     name: formData.get("name"),
     slug: formData.get("slug") || undefined,
     tagline: formData.get("tagline") || "",
     category: formData.get("category"),
     description: formData.get("description"),
-    ingredients: formData.get("ingredients") || "",
-    servings: formData.get("servings") || "",
-    price: formData.get("price"),
-    salePrice: formData.get("salePrice") || undefined,
-    saleEndsAt: formData.get("saleEndsAt") || undefined,
-    stock: formData.get("stock"),
-    lowStockThreshold: formData.get("lowStockThreshold") || 10,
-    imageKey: formData.get("imageKey") || "default",
+    purity: formData.get("purity") || "",
+    form: formData.get("form") || "Lyophilized powder",
+    casNumber: formData.get("casNumber") || "",
+    molecularFormula: formData.get("molecularFormula") || "",
+    molecularWeight: formData.get("molecularWeight") || "",
+    sequence: formData.get("sequence") || "",
+    storage: formData.get("storage") || "",
+    coaUrl: formData.get("coaUrl") || "",
+    imageKey: formData.get("imageKey") || "vial",
     featured: formData.get("featured") === "on",
     active: formData.get("active") === "on",
-  };
-  return productSchema.safeParse(raw);
+    variants,
+  });
 }
 
-function toData(d: z.infer<typeof productSchema>) {
+function productData(d: z.infer<typeof productSchema>) {
   return {
     name: d.name,
     slug: d.slug && d.slug.length ? slugify(d.slug) : slugify(d.name),
     tagline: d.tagline ?? "",
     category: d.category,
     description: d.description,
-    ingredients: d.ingredients ?? "",
-    servings: d.servings ?? "",
-    price: d.price,
-    salePrice: d.salePrice && d.salePrice > 0 ? d.salePrice : null,
-    saleEndsAt: d.saleEndsAt ? new Date(d.saleEndsAt) : null,
-    stock: d.stock,
-    lowStockThreshold: d.lowStockThreshold ?? 10,
-    imageKey: d.imageKey || "default",
+    purity: d.purity ?? "",
+    form: d.form ?? "",
+    casNumber: d.casNumber ?? "",
+    molecularFormula: d.molecularFormula ?? "",
+    molecularWeight: d.molecularWeight ?? "",
+    sequence: d.sequence ?? "",
+    storage: d.storage ?? "",
+    coaUrl: d.coaUrl ?? "",
+    imageKey: d.imageKey || "vial",
     featured: d.featured,
     active: d.active,
   };
 }
 
-export type FormResult = { ok: false; error: string } | { ok: true };
+function variantData(v: z.infer<typeof variantSchema>, sortOrder: number) {
+  const salePrice = v.salePrice === "" || v.salePrice == null ? null : Number(v.salePrice);
+  return {
+    label: v.label,
+    sku: v.sku.trim(),
+    price: v.price,
+    salePrice: salePrice && salePrice > 0 ? salePrice : null,
+    saleEndsAt: v.saleEndsAt ? new Date(v.saleEndsAt) : null,
+    stock: v.stock,
+    lowStockThreshold: v.lowStockThreshold ?? 10,
+    active: v.active,
+    sortOrder,
+  };
+}
 
 export async function createProduct(_prev: FormResult | null, formData: FormData): Promise<FormResult> {
   await requireAdmin();
-  const parsed = parseProductForm(formData);
+  const parsed = parseForm(formData);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid product." };
 
-  const data = toData(parsed.data);
-  const existing = await db.product.findUnique({ where: { slug: data.slug } });
-  if (existing) return { ok: false, error: "A product with that slug already exists." };
+  const data = productData(parsed.data);
+  if (await db.product.findUnique({ where: { slug: data.slug } })) {
+    return { ok: false, error: "A product with that slug already exists." };
+  }
+  const skus = parsed.data.variants.map((v) => v.sku.trim());
+  if (await db.productVariant.findFirst({ where: { sku: { in: skus } } })) {
+    return { ok: false, error: "One or more SKUs are already in use." };
+  }
 
-  await db.product.create({ data });
+  await db.product.create({
+    data: {
+      ...data,
+      variants: { create: parsed.data.variants.map((v, i) => variantData(v, i)) },
+    },
+  });
   revalidatePath("/admin/products");
   revalidatePath("/shop");
   redirect("/admin/products");
@@ -93,17 +136,39 @@ export async function createProduct(_prev: FormResult | null, formData: FormData
 
 export async function updateProduct(id: string, _prev: FormResult | null, formData: FormData): Promise<FormResult> {
   await requireAdmin();
-  const parsed = parseProductForm(formData);
+  const parsed = parseForm(formData);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid product." };
 
-  const data = toData(parsed.data);
-  const clash = await db.product.findFirst({
-    where: { slug: data.slug, NOT: { id } },
+  const data = productData(parsed.data);
+  if (await db.product.findFirst({ where: { slug: data.slug, NOT: { id } } })) {
+    return { ok: false, error: "Another product already uses that slug." };
+  }
+  // SKU collisions against other products
+  const skus = parsed.data.variants.map((v) => v.sku.trim());
+  const clashing = await db.productVariant.findFirst({
+    where: { sku: { in: skus }, productId: { not: id } },
   });
-  if (clash) return { ok: false, error: "Another product already uses that slug." };
+  if (clashing) return { ok: false, error: `SKU ${clashing.sku} is used by another product.` };
 
   await db.product.update({ where: { id }, data });
+
+  // Upsert variants by SKU; remove any that were deleted in the form.
+  const existing = await db.productVariant.findMany({ where: { productId: id } });
+  const keepSkus = new Set(skus);
+  for (const ex of existing) {
+    if (!keepSkus.has(ex.sku)) await db.productVariant.delete({ where: { id: ex.id } });
+  }
+  for (let i = 0; i < parsed.data.variants.length; i++) {
+    const vd = variantData(parsed.data.variants[i], i);
+    await db.productVariant.upsert({
+      where: { sku: vd.sku },
+      create: { ...vd, productId: id },
+      update: vd,
+    });
+  }
+
   revalidatePath("/admin/products");
+  revalidatePath("/admin/inventory");
   revalidatePath("/shop");
   revalidatePath(`/product/${data.slug}`);
   redirect("/admin/products");
@@ -111,17 +176,16 @@ export async function updateProduct(id: string, _prev: FormResult | null, formDa
 
 export async function deleteProduct(formData: FormData) {
   await requireAdmin();
-  const id = String(formData.get("id"));
-  await db.product.delete({ where: { id } });
+  await db.product.delete({ where: { id: String(formData.get("id")) } });
   revalidatePath("/admin/products");
   revalidatePath("/shop");
 }
 
 export async function updateStock(formData: FormData) {
   await requireAdmin();
-  const id = String(formData.get("id"));
+  const variantId = String(formData.get("variantId"));
   const stock = Math.max(0, Math.floor(Number(formData.get("stock")) || 0));
-  await db.product.update({ where: { id }, data: { stock } });
+  await db.productVariant.update({ where: { id: variantId }, data: { stock } });
   revalidatePath("/admin/inventory");
   revalidatePath("/shop");
 }
@@ -142,9 +206,7 @@ const couponSchema = z
     value: z.coerce.number().positive("Value must be positive"),
     expiresAt: z.string().optional(),
   })
-  .refine((d) => d.type !== "percent" || d.value <= 100, {
-    message: "Percentage cannot exceed 100.",
-  });
+  .refine((d) => d.type !== "percent" || d.value <= 100, { message: "Percentage cannot exceed 100." });
 
 export async function createCoupon(_prev: FormResult | null, formData: FormData): Promise<FormResult> {
   await requireAdmin();
@@ -157,9 +219,9 @@ export async function createCoupon(_prev: FormResult | null, formData: FormData)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid coupon." };
 
   const code = parsed.data.code.trim().toUpperCase();
-  const existing = await db.coupon.findUnique({ where: { code } });
-  if (existing) return { ok: false, error: "That code already exists." };
-
+  if (await db.coupon.findUnique({ where: { code } })) {
+    return { ok: false, error: "That code already exists." };
+  }
   await db.coupon.create({
     data: {
       code,
@@ -184,7 +246,6 @@ export async function toggleCoupon(formData: FormData) {
 
 export async function deleteCoupon(formData: FormData) {
   await requireAdmin();
-  const id = String(formData.get("id"));
-  await db.coupon.delete({ where: { id } });
+  await db.coupon.delete({ where: { id: String(formData.get("id")) } });
   revalidatePath("/admin/coupons");
 }

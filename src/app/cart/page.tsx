@@ -3,11 +3,7 @@
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
-import {
-  FREE_SHIPPING_THRESHOLD,
-  FLAT_SHIPPING,
-  shippingFor,
-} from "@/lib/pricing";
+import { FREE_SHIPPING_THRESHOLD, FLAT_SHIPPING, shippingFor } from "@/lib/pricing";
 import ProductImage from "@/components/ProductImage";
 
 export default function CartPage() {
@@ -22,9 +18,7 @@ export default function CartPage() {
       <div className="container-site flex flex-col items-center py-24 text-center">
         <h1 className="text-3xl font-bold tracking-tight">Your cart is empty</h1>
         <p className="mt-3 text-ink-muted">Add a few products to get started.</p>
-        <Link href="/shop" className="btn-primary mt-8">
-          Shop Products
-        </Link>
+        <Link href="/shop" className="btn-primary mt-8">Browse Catalog</Link>
       </div>
     );
   }
@@ -40,43 +34,36 @@ export default function CartPage() {
         <div>
           <ul className="divide-y divide-line border-y border-line">
             {items.map((item) => (
-              <li key={item.slug} className="flex gap-5 py-6">
+              <li key={item.variantId} className="flex gap-5 py-6">
                 <Link href={`/product/${item.slug}`} className="h-28 w-28 shrink-0 border border-line">
                   <ProductImage imageKey={item.imageKey} name={item.name} className="h-full w-full" />
                 </Link>
                 <div className="flex flex-1 flex-col">
                   <div className="flex justify-between gap-4">
-                    <Link href={`/product/${item.slug}`} className="font-semibold hover:underline">
-                      {item.name}
-                    </Link>
-                    <span className="font-semibold">
-                      {formatPrice(item.unitPrice * item.quantity)}
-                    </span>
+                    <div>
+                      <Link href={`/product/${item.slug}`} className="font-semibold hover:underline">
+                        {item.name}
+                      </Link>
+                      <p className="text-sm text-ink-muted">{item.variantLabel} · SKU {item.sku}</p>
+                    </div>
+                    <span className="font-semibold">{formatPrice(item.unitPrice * item.quantity)}</span>
                   </div>
-                  <p className="mt-1 text-sm text-ink-muted">
-                    {formatPrice(item.unitPrice)} each
-                  </p>
+                  <p className="mt-1 text-sm text-ink-muted">{formatPrice(item.unitPrice)} each</p>
                   <div className="mt-auto flex items-center justify-between pt-4">
                     <div className="flex items-center border border-line">
-                      <button
-                        onClick={() => updateQuantity(item.slug, item.quantity - 1)}
-                        className="flex h-9 w-9 items-center justify-center hover:bg-paper-muted"
-                      >
+                      <button onClick={() => updateQuantity(item.variantId, item.quantity - 1)} className="flex h-9 w-9 items-center justify-center hover:bg-paper-muted">
                         −
                       </button>
                       <span className="w-10 text-center text-sm">{item.quantity}</span>
                       <button
-                        onClick={() => updateQuantity(item.slug, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                         disabled={item.quantity >= item.maxStock}
                         className="flex h-9 w-9 items-center justify-center hover:bg-paper-muted disabled:opacity-30"
                       >
                         +
                       </button>
                     </div>
-                    <button
-                      onClick={() => removeItem(item.slug)}
-                      className="text-xs uppercase tracking-[0.14em] text-ink-muted hover:text-ink"
-                    >
+                    <button onClick={() => removeItem(item.variantId)} className="text-xs uppercase tracking-[0.14em] text-ink-muted hover:text-ink">
                       Remove
                     </button>
                   </div>
@@ -90,9 +77,7 @@ export default function CartPage() {
         </div>
 
         <aside className="h-fit border border-line p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.18em]">
-            Order Summary
-          </h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em]">Order Summary</h2>
           <dl className="mt-6 space-y-3 text-sm">
             <div className="flex justify-between">
               <dt className="text-ink-muted">Subtotal</dt>
@@ -104,8 +89,8 @@ export default function CartPage() {
             </div>
             {subtotal < FREE_SHIPPING_THRESHOLD && (
               <p className="text-xs text-ink-muted">
-                Spend {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for
-                free shipping (otherwise {formatPrice(FLAT_SHIPPING)}).
+                Spend {formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for free shipping
+                (otherwise {formatPrice(FLAT_SHIPPING)}).
               </p>
             )}
           </dl>
@@ -114,9 +99,7 @@ export default function CartPage() {
             <span>{formatPrice(estTotal)}</span>
           </div>
           <p className="mt-1 text-xs text-ink-muted">Tax calculated at checkout.</p>
-          <Link href="/checkout" className="btn-primary mt-6 w-full">
-            Proceed to Checkout
-          </Link>
+          <Link href="/checkout" className="btn-primary mt-6 w-full">Proceed to Checkout</Link>
         </aside>
       </div>
     </div>

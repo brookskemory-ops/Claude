@@ -3,27 +3,49 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  name         String
-  passwordHash String
-  role         String    @default("CUSTOMER") // CUSTOMER | ADMIN
-  addresses    Address[]
-  orders       Order[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                 String               @id @default(cuid())
+  email              String               @unique
+  name               String
+  passwordHash       String
+  role               String               @default("CUSTOMER") // CUSTOMER | ADMIN
+  emailVerified      DateTime?
+  addresses          Address[]
+  orders             Order[]
+  resetTokens        PasswordResetToken[]
+  verificationTokens VerificationToken[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model Address {
   id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  label     String   @default("Home")
+  label     String   @default("Lab")
   recipient String
   line1     String
   line2     String?
@@ -37,25 +59,47 @@ model Address {
 }
 
 model Product {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  tagline     String  @default("")
+  description String
+
+  category String
+
+  // Research-peptide specifications
+  purity           String @default("") // e.g. "≥99%"
+  form             String @default("Lyophilized powder")
+  casNumber        String @default("")
+  molecularFormula String @default("")
+  molecularWeight  String @default("")
+  sequence         String @default("")
+  storage          String @default("")
+  coaUrl           String @default("") // Certificate of Analysis link
+
+  featured  Boolean          @default(false)
+  active    Boolean          @default(true)
+  imageKey  String           @default("default")
+  variants  ProductVariant[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model ProductVariant {
   id                String      @id @default(cuid())
-  slug              String      @unique
-  name              String
-  tagline           String      @default("")
-  description       String
-  category          String
+  productId         String
+  product           Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label             String // e.g. "5mg", "10mg vial"
+  sku               String      @unique
   price             Float
   salePrice         Float?
   saleEndsAt        DateTime?
-  ingredients       String      @default("")
-  servings          String      @default("")
   stock             Int         @default(0)
   lowStockThreshold Int         @default(10)
-  featured          Boolean     @default(false)
   active            Boolean     @default(true)
-  imageKey          String      @default("default")
+  sortOrder         Int         @default(0)
   orderItems        OrderItem[]
   createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
 }
 
 model Coupon {
@@ -75,6 +119,9 @@ model Order {
   user            User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   email           String
   status          String      @default("PENDING") // PENDING | PAID | SHIPPED | DELIVERED | CANCELLED
+  paymentProvider String?     // "stripe" | "paypal" | "simulated"
+  paymentRef      String?
+  ruoAcknowledged Boolean     @default(false)
   subtotal        Float
   discount        Float       @default(0)
   shipping        Float       @default(0)
@@ -89,14 +136,16 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String?
-  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
-  name      String
-  slug      String
-  imageKey  String  @default("default")
-  unitPrice Float
-  quantity  Int
+  id           String          @id @default(cuid())
+  orderId      String
+  order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variantId    String?
+  variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  productSlug  String
+  name         String
+  variantLabel String          @default("")
+  sku          String          @default("")
+  imageKey     String          @default("default")
+  unitPrice    Float
+  quantity     Int
 }

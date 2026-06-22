@@ -4,58 +4,31 @@ type Props = {
   className?: string;
 };
 
-// Brand-styled black & white SVG placeholders, one silhouette per category key.
-// Swapping in real product photos later only means replacing this component's output.
+// Brand-styled black & white SVG placeholders for research-peptide products.
+// Swapping in real product/COA photography later means replacing this component's output.
 const SHAPES: Record<string, JSX.Element> = {
-  protein: (
+  vial: (
     <g>
-      <rect x="78" y="70" width="44" height="22" rx="4" />
-      <rect x="70" y="92" width="60" height="92" rx="8" />
-      <rect x="70" y="120" width="60" height="30" className="opacity-100" />
+      <rect x="86" y="58" width="28" height="10" rx="2" />
+      <rect x="84" y="68" width="32" height="8" rx="1" />
+      <path d="M86 76 h28 v74 a14 14 0 0 1 -14 14 a14 14 0 0 1 -14 -14 z" />
+      <rect x="86" y="120" width="28" height="30" className="fill-paper" />
     </g>
   ),
-  preworkout: (
+  solvent: (
     <g>
-      <rect x="74" y="64" width="52" height="14" rx="3" />
-      <path d="M72 84 h56 l-6 100 h-44 z" />
-      <rect x="72" y="120" width="56" height="26" />
-    </g>
-  ),
-  creatine: (
-    <g>
-      <rect x="76" y="70" width="48" height="18" rx="4" />
-      <rect x="68" y="88" width="64" height="96" rx="6" />
-      <circle cx="100" cy="134" r="20" className="fill-paper" />
-    </g>
-  ),
-  vitamins: (
-    <g>
-      <rect x="78" y="66" width="44" height="20" rx="6" />
-      <rect x="72" y="86" width="56" height="98" rx="10" />
-      <rect x="84" y="112" width="32" height="44" className="fill-paper" />
-    </g>
-  ),
-  recovery: (
-    <g>
-      <rect x="80" y="62" width="40" height="16" rx="3" />
-      <rect x="70" y="78" width="60" height="106" rx="8" />
-      <path d="M70 130 h60 v10 h-60 z" className="fill-paper" />
-    </g>
-  ),
-  greens: (
-    <g>
-      <rect x="78" y="68" width="44" height="20" rx="5" />
-      <rect x="70" y="88" width="60" height="96" rx="8" />
-      <path
-        d="M100 110 q-18 6 -18 26 q18 -4 18 -26 q0 22 18 26 q0 -20 -18 -26z"
-        className="fill-paper"
-      />
+      <rect x="92" y="54" width="16" height="14" rx="2" />
+      <rect x="84" y="68" width="32" height="12" rx="2" />
+      <path d="M82 80 h36 v62 a10 10 0 0 1 -10 10 h-16 a10 10 0 0 1 -10 -10 z" />
+      <rect x="82" y="120" width="36" height="22" className="fill-paper" />
     </g>
   ),
   default: (
     <g>
-      <rect x="76" y="70" width="48" height="20" rx="4" />
-      <rect x="70" y="90" width="60" height="94" rx="8" />
+      <rect x="86" y="58" width="28" height="10" rx="2" />
+      <rect x="84" y="68" width="32" height="8" rx="1" />
+      <path d="M86 76 h28 v74 a14 14 0 0 1 -14 14 a14 14 0 0 1 -14 -14 z" />
+      <rect x="86" y="118" width="28" height="32" className="fill-paper" />
     </g>
   ),
 };

@@ -7,10 +7,16 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
 
+  const publicAccountPaths = [
+    "/account/login",
+    "/account/register",
+    "/account/forgot",
+    "/account/reset",
+    "/account/verify",
+  ];
   const isAccount =
     pathname.startsWith("/account") &&
-    !pathname.startsWith("/account/login") &&
-    !pathname.startsWith("/account/register");
+    !publicAccountPaths.some((p) => pathname.startsWith(p));
   const isAdmin = pathname.startsWith("/admin");
 
   if ((isAccount || isAdmin) && !session) {

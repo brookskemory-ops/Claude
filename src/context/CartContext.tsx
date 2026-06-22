@@ -15,8 +15,8 @@ type CartContextValue = {
   subtotal: number;
   isReady: boolean;
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
-  updateQuantity: (slug: string, quantity: number) => void;
-  removeItem: (slug: string) => void;
+  updateQuantity: (variantId: string, quantity: number) => void;
+  removeItem: (variantId: string) => void;
   clear: () => void;
 };
 
@@ -45,11 +45,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   function addItem(item: Omit<CartItem, "quantity">, quantity = 1) {
     setItems((prev) => {
-      const existing = prev.find((i) => i.slug === item.slug);
+      const existing = prev.find((i) => i.variantId === item.variantId);
       if (existing) {
         const next = Math.min(existing.quantity + quantity, item.maxStock);
         return prev.map((i) =>
-          i.slug === item.slug
+          i.variantId === item.variantId
             ? { ...i, quantity: next, unitPrice: item.unitPrice, maxStock: item.maxStock }
             : i,
         );
@@ -58,11 +58,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
-  function updateQuantity(slug: string, quantity: number) {
+  function updateQuantity(variantId: string, quantity: number) {
     setItems((prev) =>
       prev
         .map((i) =>
-          i.slug === slug
+          i.variantId === variantId
             ? { ...i, quantity: Math.max(0, Math.min(quantity, i.maxStock)) }
             : i,
         )
@@ -70,8 +70,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  function removeItem(slug: string) {
-    setItems((prev) => prev.filter((i) => i.slug !== slug));
+  function removeItem(variantId: string) {
+    setItems((prev) => prev.filter((i) => i.variantId !== variantId));
   }
 
   function clear() {

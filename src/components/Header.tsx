@@ -5,6 +5,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import CartDrawer from "@/components/CartDrawer";
+import { LogoWordmark } from "@/components/Logo";
 import type { SessionPayload } from "@/lib/types";
 
 const NAV = [
@@ -25,6 +26,9 @@ export default function Header({
 
   return (
     <>
+      <div className="bg-ink px-4 py-1.5 text-center text-[10px] uppercase tracking-[0.18em] text-paper/80">
+        Research Use Only — not for human or veterinary consumption
+      </div>
       <header className="sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur">
         <div className="container-site flex h-16 items-center justify-between gap-4">
           <button
@@ -35,12 +39,8 @@ export default function Header({
             <MenuIcon />
           </button>
 
-          <Link
-            href="/"
-            className="text-lg font-bold uppercase tracking-brand"
-            onClick={() => setMenuOpen(false)}
-          >
-            Axevia
+          <Link href="/" onClick={() => setMenuOpen(false)} aria-label="Axevia home">
+            <LogoWordmark className="text-xl" />
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">

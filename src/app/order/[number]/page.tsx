@@ -59,11 +59,11 @@ export default async function OrderPage({
           {order.items.map((item) => (
             <li key={item.id} className="flex justify-between py-4">
               <div>
-                <Link href={`/product/${item.slug}`} className="text-sm font-medium hover:underline">
+                <Link href={`/product/${item.productSlug}`} className="text-sm font-medium hover:underline">
                   {item.name}
                 </Link>
                 <p className="text-xs text-ink-muted">
-                  Qty {item.quantity} · {formatPrice(item.unitPrice)} each
+                  {item.variantLabel ? `${item.variantLabel} · ` : ""}Qty {item.quantity} · {formatPrice(item.unitPrice)} each
                 </p>
               </div>
               <span className="text-sm font-medium">

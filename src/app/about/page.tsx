@@ -1,52 +1,52 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import ProductImage from "@/components/ProductImage";
+import { LogoMonogram } from "@/components/Logo";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = { title: "About & Quality" };
 
 export default function AboutPage() {
   return (
     <div>
       <section className="bg-ink text-paper">
         <div className="container-site py-20 text-center">
-          <p className="eyebrow text-paper/60">Our Story</p>
+          <p className="eyebrow text-paper/60">About Axevia</p>
           <h1 className="mx-auto mt-4 max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
-            Supplements without the smoke and mirrors.
+            Research materials you can trust.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-paper/70">
-            Axevia was built on a simple idea: if it&apos;s going in your body,
-            you deserve to know exactly what it is and why it&apos;s there.
+            Axevia supplies high-purity research peptides backed by independent analytical testing,
+            so your work starts with materials of known identity and quality.
           </p>
         </div>
       </section>
 
       <section className="container-site grid items-center gap-12 py-20 lg:grid-cols-2">
-        <div className="aspect-[4/3] border border-line">
-          <ProductImage imageKey="creatine" name="Axevia" className="h-full w-full p-12" />
+        <div className="flex aspect-[4/3] items-center justify-center border border-line">
+          <LogoMonogram size={140} />
         </div>
         <div>
-          <p className="eyebrow">The Mission</p>
+          <p className="eyebrow">Quality Standards</p>
           <h2 className="mt-3 text-3xl font-bold tracking-tight">
-            Clinically dosed. Honestly labeled.
+            Tested, documented, and traceable.
           </h2>
           <p className="mt-5 text-ink-muted">
-            We don&apos;t hide behind proprietary blends or pixie-dusted
-            formulas. Every ingredient is included at a dose backed by research,
-            and every label tells the full story — no asterisks, no fillers.
+            Every lot is analyzed by independent laboratories using HPLC and mass spectrometry to
+            confirm identity and purity. A Certificate of Analysis accompanies each batch, and
+            products ship lyophilized and ready for storage at -20°C.
           </p>
           <p className="mt-4 text-ink-muted">
-            From sourcing to third-party testing, we hold every batch to a single
-            standard: the one we&apos;d demand for ourselves.
+            We supply research professionals only, and we hold every shipment to the standard we
+            would demand for our own bench.
           </p>
         </div>
       </section>
 
       <section className="border-t border-line bg-paper-soft">
-        <div className="container-site grid gap-px bg-line py-px sm:grid-cols-3">
+        <div className="container-site grid gap-px bg-line sm:grid-cols-3">
           {[
-            { t: "Transparency", d: "Full label disclosure on every product." },
-            { t: "Efficacy", d: "Research-backed, clinically relevant doses." },
-            { t: "Purity", d: "Third-party tested for what's in — and what's not." },
+            { t: "Purity", d: "High-purity compounds verified per lot via HPLC." },
+            { t: "Documentation", d: "Certificate of Analysis with every batch." },
+            { t: "Handling", d: "Lyophilized and shipped to spec for stability." },
           ].map((v) => (
             <div key={v.t} className="bg-paper-soft px-6 py-12 text-center">
               <h3 className="text-sm font-semibold uppercase tracking-[0.14em]">{v.t}</h3>
@@ -57,10 +57,14 @@ export default function AboutPage() {
       </section>
 
       <section className="container-site py-20 text-center">
-        <h2 className="text-3xl font-bold tracking-tight">Train with intent.</h2>
-        <Link href="/shop" className="btn-primary mt-8">
-          Shop the Collection
-        </Link>
+        <h2 className="text-3xl font-bold tracking-tight">For research professionals.</h2>
+        <p className="mx-auto mt-3 max-w-xl text-ink-muted">
+          Axevia products are for laboratory research use only — not for human or veterinary use.
+        </p>
+        <div className="mt-8 flex justify-center gap-3">
+          <Link href="/shop" className="btn-primary">Browse Catalog</Link>
+          <Link href="/research-use-policy" className="btn-outline">Research-Use Policy</Link>
+        </div>
       </section>
     </div>
   );
