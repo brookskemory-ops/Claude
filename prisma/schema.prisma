@@ -198,6 +198,13 @@ model AbandonedCart {
   updatedAt  DateTime  @updatedAt
 }
 
+model SiteConfig {
+  id              String   @id @default("singleton")
+  maintenanceMode Boolean  @default(false)
+  maintenanceCode String   @default("")
+  updatedAt       DateTime @updatedAt
+}
+
 model Referral {
   id                 String   @id @default(cuid())
   referrerId         String

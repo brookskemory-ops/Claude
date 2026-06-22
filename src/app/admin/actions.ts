@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
@@ -386,4 +386,20 @@ export async function toggleTaxExempt(formData: FormData) {
   await db.user.update({ where: { id }, data: { taxExempt: !user.taxExempt } });
   await logAudit("customer.taxExempt", `${user.email} -> ${!user.taxExempt}`);
   revalidatePath("/admin/customers");
+}
+
+// ---- Site settings (maintenance mode) ----
+
+export async function updateMaintenance(formData: FormData) {
+  await requireAdmin();
+  const on = formData.get("maintenanceMode") === "on";
+  const code = String(formData.get("maintenanceCode") || "");
+  await db.siteConfig.upsert({
+    where: { id: "singleton" },
+    create: { id: "singleton", maintenanceMode: on, maintenanceCode: code },
+    update: { maintenanceMode: on, maintenanceCode: code },
+  });
+  await logAudit("maintenance", on ? "enabled" : "disabled");
+  revalidateTag("site-config");
+  revalidatePath("/admin/settings");
 }

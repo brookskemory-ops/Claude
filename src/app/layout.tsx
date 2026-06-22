@@ -8,7 +8,10 @@ import AgeGate from "@/components/AgeGate";
 import CookieConsent from "@/components/CookieConsent";
 import ReferralCapture from "@/components/ReferralCapture";
 import Analytics from "@/components/Analytics";
+import MaintenanceScreen from "@/components/MaintenanceScreen";
 import { getSession } from "@/lib/auth";
+import { getSiteConfig } from "@/lib/config";
+import { cookies, headers } from "next/headers";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://axevia.co";
 
@@ -35,35 +38,49 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
+  const [session, config] = await Promise.all([getSession(), getSiteConfig()]);
+
+  // DB-driven maintenance gate (admins and access-code holders bypass).
+  const maintenanceOn = config.maintenanceMode || process.env.MAINTENANCE_MODE === "on";
+  const bypassCode = config.maintenanceCode || process.env.MAINTENANCE_BYPASS_CODE || "";
+  const previewOk = !!bypassCode && cookies().get("axevia_preview")?.value === bypassCode;
+  const pathname = headers().get("x-pathname") || "";
+  const allowed = pathname.startsWith("/account/login") || pathname === "/maintenance";
+  const gated = maintenanceOn && session?.role !== "ADMIN" && !previewOk && !allowed;
 
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col">
-        <Analytics />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "Axevia",
-              url: siteUrl,
-              description:
-                "High-purity, third-party tested research peptides for qualified research professionals.",
-            }),
-          }}
-        />
-        <CartProvider>
-          <Suspense>
-            <ReferralCapture />
-          </Suspense>
-          <AgeGate />
-          <Header session={session} />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <CookieConsent />
-        </CartProvider>
+        {gated ? (
+          <MaintenanceScreen />
+        ) : (
+          <>
+            <Analytics />
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "Organization",
+                  name: "Axevia",
+                  url: siteUrl,
+                  description:
+                    "High-purity, third-party tested research peptides for qualified research professionals.",
+                }),
+              }}
+            />
+            <CartProvider>
+              <Suspense>
+                <ReferralCapture />
+              </Suspense>
+              <AgeGate />
+              <Header session={session} />
+              <main className="flex-1">{children}</main>
+              <Footer />
+              <CookieConsent />
+            </CartProvider>
+          </>
+        )}
       </body>
     </html>
   );

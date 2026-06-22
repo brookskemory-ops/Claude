@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ContactForm from "./ContactForm";
 
 export const metadata: Metadata = { title: "Contact" };
 
@@ -40,36 +41,7 @@ export default function ContactPage() {
           </dl>
         </div>
 
-        <form className="space-y-4 border border-line p-8">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">First Name</label>
-              <input className="input" />
-            </div>
-            <div>
-              <label className="label">Last Name</label>
-              <input className="input" />
-            </div>
-          </div>
-          <div>
-            <label className="label">Email</label>
-            <input className="input" type="email" />
-          </div>
-          <div>
-            <label className="label">Subject</label>
-            <input className="input" />
-          </div>
-          <div>
-            <label className="label">Message</label>
-            <textarea className="input" rows={5} />
-          </div>
-          <button type="button" className="btn-primary w-full">
-            Send Message
-          </button>
-          <p className="text-center text-xs text-ink-muted">
-            Demo form — submissions are not stored.
-          </p>
-        </form>
+        <ContactForm />
       </div>
     </div>
   );

@@ -128,6 +128,25 @@ export async function sendReferralReward(args: {
   });
 }
 
+export async function sendContactMessage(args: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}): Promise<void> {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const body = `
+    <p><strong>From:</strong> ${esc(args.name)} &lt;${esc(args.email)}&gt;</p>
+    <p><strong>Subject:</strong> ${esc(args.subject)}</p>
+    <p style="white-space:pre-wrap;border-left:2px solid #0a0a0a;padding-left:12px;margin-top:16px">${esc(args.message)}</p>`;
+  await sendEmail({
+    to: process.env.CONTACT_INBOX || "support@axevia.co",
+    subject: `Contact form: ${args.subject || "(no subject)"}`,
+    html: layout("New contact message", body),
+  });
+}
+
 export async function sendVerification(args: {
   to: string;
   verifyUrl: string;

@@ -24,11 +24,6 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </div>
-        <div className="mt-8 border border-line bg-paper-soft p-4 text-xs text-ink-muted">
-          <p className="font-semibold uppercase tracking-[0.14em]">Demo accounts</p>
-          <p className="mt-2">Admin — admin@axevia.com / admin123</p>
-          <p>Customer — researcher@example.com / password123</p>
-        </div>
       </div>
     </div>
   );

@@ -1,10 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getSiteConfig } from "@/lib/config";
 
 // Sets the preview bypass cookie when the correct maintenance access code is entered.
 export async function POST(req: NextRequest) {
   const form = await req.formData();
   const code = String(form.get("code") || "");
-  const expected = process.env.MAINTENANCE_BYPASS_CODE || "";
+  const config = await getSiteConfig();
+  const expected = config.maintenanceCode || process.env.MAINTENANCE_BYPASS_CODE || "";
 
   if (expected && code === expected) {
     // 303 so the browser issues a GET to the homepage after the POST.
