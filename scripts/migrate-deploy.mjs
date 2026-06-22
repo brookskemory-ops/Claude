@@ -28,7 +28,19 @@ if (!url) {
 
 const directUrl = url.replace("-pooler", "");
 
-execSync("npx prisma migrate deploy", {
-  stdio: "inherit",
-  env: { ...process.env, DATABASE_URL: directUrl },
-});
+// Retry to ride out transient advisory-lock contention or a Neon cold start.
+const attempts = 4;
+for (let i = 1; i <= attempts; i++) {
+  try {
+    execSync("npx prisma migrate deploy", {
+      stdio: "inherit",
+      env: { ...process.env, DATABASE_URL: directUrl },
+    });
+    break;
+  } catch (err) {
+    if (i === attempts) throw err;
+    const waitMs = 1000 * 2 ** i; // 2s, 4s, 8s
+    console.warn(`[migrate] attempt ${i} failed; retrying in ${waitMs / 1000}s...`);
+    execSync(`sleep ${waitMs / 1000}`);
+  }
+}
