@@ -7,6 +7,7 @@ import { couponDiscount, isCouponValid } from "@/lib/pricing";
 import { computeTax } from "@/lib/tax";
 import { createPendingOrder, finalizeOrder } from "@/lib/orders";
 import { stripe } from "@/lib/stripe";
+import { getHostedPaymentToken, hostedPaymentUrl } from "@/lib/authorizenet";
 
 export async function quoteTax(state: string, taxable: number): Promise<{ tax: number }> {
   const session = await getSession();
@@ -106,6 +107,25 @@ export async function payWithStripe(
   return session.url
     ? { ok: true, url: session.url }
     : { ok: false, error: "Could not start Stripe checkout." };
+}
+
+/** Starts an Authorize.Net Accept Hosted payment; returns the token + form URL to POST to. */
+export async function payWithAuthorizeNet(
+  orderId: string,
+): Promise<{ ok: true; token: string; url: string } | { ok: false; error: string }> {
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order || order.status !== "PENDING") {
+    return { ok: false, error: "Order is no longer available." };
+  }
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const res = await getHostedPaymentToken({
+    orderNumber: order.number,
+    orderId: order.id,
+    amount: order.total,
+    siteUrl: site,
+  });
+  if (!res.ok) return res;
+  return { ok: true, token: res.token, url: hostedPaymentUrl() };
 }
 
 /** Finalizes an order paid via the built-in simulated method (no payment keys set). */

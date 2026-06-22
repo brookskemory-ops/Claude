@@ -9,11 +9,27 @@ import { shippingFor, round2 } from "@/lib/pricing";
 import {
   submitOrder,
   payWithStripe,
+  payWithAuthorizeNet,
   finalizeSimulated,
   validateCoupon,
   quoteTax,
 } from "./actions";
 import PayPalButton from "@/components/PayPalButton";
+
+function postRedirect(url: string, fields: Record<string, string>) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = url;
+  for (const [k, v] of Object.entries(fields)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = k;
+    input.value = v;
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+}
 
 type Address = {
   recipient: string;
@@ -45,6 +61,7 @@ export default function CheckoutForm({
   defaultAddress,
   stripeEnabled,
   paypalEnabled,
+  authnetEnabled,
   paypalClientId,
 }: {
   loggedIn: boolean;
@@ -52,6 +69,7 @@ export default function CheckoutForm({
   defaultAddress: Address | null;
   stripeEnabled: boolean;
   paypalEnabled: boolean;
+  authnetEnabled: boolean;
   paypalClientId: string;
 }) {
   const router = useRouter();
@@ -59,11 +77,12 @@ export default function CheckoutForm({
 
   const methods = useMemo(() => {
     const m: string[] = [];
+    if (authnetEnabled) m.push("authnet");
     if (stripeEnabled) m.push("card");
     if (paypalEnabled) m.push("paypal");
     if (m.length === 0) m.push("simulated");
     return m;
-  }, [stripeEnabled, paypalEnabled]);
+  }, [stripeEnabled, paypalEnabled, authnetEnabled]);
 
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState(defaultEmail);
@@ -170,6 +189,14 @@ export default function CheckoutForm({
       }
       setError(res.error);
       setSubmitting(false);
+    } else if (method === "authnet") {
+      const res = await payWithAuthorizeNet(orderId);
+      if (res.ok) {
+        postRedirect(res.url, { token: res.token });
+        return;
+      }
+      setError(res.error);
+      setSubmitting(false);
     } else {
       const res = await finalizeSimulated(orderId);
       if (res.ok) {
@@ -231,6 +258,9 @@ export default function CheckoutForm({
             <section>
               <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em]">Payment Method</h2>
               <div className="space-y-2">
+                {methods.includes("authnet") && (
+                  <MethodRow id="authnet" method={method} setMethod={setMethod} title="Credit / Debit Card" note="Securely processed on Authorize.Net's hosted page." />
+                )}
                 {methods.includes("card") && (
                   <MethodRow id="card" method={method} setMethod={setMethod} title="Credit / Debit Card (incl. Google Pay)" note="Securely processed by Stripe." />
                 )}
@@ -348,6 +378,7 @@ export default function CheckoutForm({
 }
 
 function methodLabel(m: string): string {
+  if (m === "authnet") return "Credit / Debit Card";
   if (m === "card") return "Credit / Debit Card (Stripe)";
   if (m === "paypal") return "PayPal";
   return "Simulated Checkout (Demo)";

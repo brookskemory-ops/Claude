@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { stripeEnabled } from "@/lib/stripe";
 import { paypalEnabled } from "@/lib/paypal";
+import { authnetEnabled } from "@/lib/authorizenet";
 import CheckoutForm from "./CheckoutForm";
 
 export const metadata: Metadata = { title: "Checkout" };
@@ -39,6 +40,7 @@ export default async function CheckoutPage() {
       defaultAddress={defaultAddress}
       stripeEnabled={stripeEnabled}
       paypalEnabled={paypalEnabled}
+      authnetEnabled={authnetEnabled}
       paypalClientId={process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || ""}
     />
   );
