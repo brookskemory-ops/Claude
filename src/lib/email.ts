@@ -64,6 +64,39 @@ export async function sendPasswordReset(args: {
   });
 }
 
+export async function sendShippingNotification(args: {
+  to: string;
+  orderNumber: string;
+  carrier: string;
+  tracking: string;
+  siteUrl: string;
+}): Promise<void> {
+  const body = `
+    <p>Good news — your order has shipped.</p>
+    <p style="font-size:15px"><strong>Order ${args.orderNumber}</strong></p>
+    <p>Carrier: ${args.carrier}<br/>Tracking: <strong>${args.tracking}</strong></p>
+    <p><a href="${args.siteUrl}/order/${args.orderNumber}" style="display:inline-block;background:#0a0a0a;color:#fff;padding:12px 20px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:.14em">View Order</a></p>`;
+  await sendEmail({
+    to: args.to,
+    subject: `Your Axevia order ${args.orderNumber} has shipped`,
+    html: layout("Order shipped", body),
+  });
+}
+
+export async function sendLowStockAlert(args: {
+  to: string;
+  items: { name: string; label: string; stock: number }[];
+}): Promise<void> {
+  const rows = args.items
+    .map((i) => `<li>${i.name} — ${i.label}: <strong>${i.stock} left</strong></li>`)
+    .join("");
+  await sendEmail({
+    to: args.to,
+    subject: "Axevia low-stock alert",
+    html: layout("Low stock", `<p>The following variants are at or below their threshold:</p><ul>${rows}</ul>`),
+  });
+}
+
 export async function sendVerification(args: {
   to: string;
   verifyUrl: string;

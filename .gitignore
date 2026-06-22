@@ -31,3 +31,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# locally uploaded files (COA, etc.)
+/public/uploads

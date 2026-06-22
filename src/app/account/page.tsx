@@ -7,6 +7,7 @@ import { formatPrice, formatDate } from "@/lib/format";
 import { logout } from "./actions";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
 import AddressManager from "./AddressManager";
+import ChangePassword from "./ChangePassword";
 
 export const metadata: Metadata = { title: "My Account" };
 
@@ -113,6 +114,8 @@ export default async function AccountPage() {
               </p>
             </div>
           </div>
+
+          <ChangePassword />
         </aside>
       </div>
     </div>

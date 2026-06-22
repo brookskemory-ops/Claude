@@ -58,6 +58,23 @@ export default function ProductForm({
   const [rows, setRows] = useState<VariantRow[]>(
     variants && variants.length ? variants.map(toRow) : [{ ...BLANK_ROW }],
   );
+  const [coaUrl, setCoaUrl] = useState(product?.coaUrl ?? "");
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadCoa(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.url) setCoaUrl(data.url);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function updateRow(i: number, patch: Partial<VariantRow>) {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -150,8 +167,23 @@ export default function ProductForm({
         <Field label="Sequence (optional)">
           <input name="sequence" className="input" defaultValue={product?.sequence} />
         </Field>
-        <Field label="Certificate of Analysis URL (optional)">
-          <input name="coaUrl" className="input" defaultValue={product?.coaUrl} placeholder="https://…" />
+        <Field label="Certificate of Analysis (optional)">
+          <input
+            name="coaUrl"
+            className="input"
+            value={coaUrl}
+            onChange={(e) => setCoaUrl(e.target.value)}
+            placeholder="https://… or upload a file"
+          />
+          <div className="mt-2 flex items-center gap-3">
+            <input type="file" accept="application/pdf,image/*" onChange={uploadCoa} className="text-xs" />
+            {uploading && <span className="text-xs text-ink-muted">Uploading…</span>}
+            {coaUrl && !uploading && (
+              <a href={coaUrl} target="_blank" rel="noopener noreferrer" className="text-xs underline">
+                View current
+              </a>
+            )}
+          </div>
         </Field>
       </fieldset>
 

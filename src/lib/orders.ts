@@ -8,8 +8,24 @@ import {
   shippingFor,
   TAX_RATE,
 } from "@/lib/pricing";
-import { sendOrderConfirmation } from "@/lib/email";
+import {
+  sendOrderConfirmation,
+  sendLowStockAlert,
+  sendShippingNotification,
+} from "@/lib/email";
 import { formatPrice } from "@/lib/format";
+import { stripe } from "@/lib/stripe";
+import { paypalRefund } from "@/lib/paypal";
+
+function siteUrl() {
+  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+}
+
+async function adminEmail(): Promise<string | null> {
+  if (process.env.ADMIN_EMAIL) return process.env.ADMIN_EMAIL;
+  const admin = await db.user.findFirst({ where: { role: "ADMIN" } });
+  return admin?.email ?? null;
+}
 
 export type CheckoutItemInput = { variantId: string; quantity: number };
 
@@ -171,13 +187,105 @@ export async function finalizeOrder(
     return { ok: false, error: err instanceof Error ? err.message : "Could not finalize order." };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   await sendOrderConfirmation({
     to: order.email,
     orderNumber: order.number,
     total: formatPrice(order.total),
-    siteUrl,
+    siteUrl: siteUrl(),
   });
 
+  // Alert admin about any variants that dropped to/below their low-stock threshold.
+  const variantIds = order.items.map((i) => i.variantId).filter(Boolean) as string[];
+  if (variantIds.length) {
+    const lows = await db.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      include: { product: true },
+    });
+    const low = lows.filter((v) => v.stock <= v.lowStockThreshold);
+    const to = await adminEmail();
+    if (low.length && to) {
+      await sendLowStockAlert({
+        to,
+        items: low.map((v) => ({ name: v.product.name, label: v.label, stock: v.stock })),
+      });
+    }
+  }
+
   return { ok: true, number: order.number };
+}
+
+/** Returns stock to inventory for a paid/shipped order being refunded or cancelled. */
+async function restockOrder(orderId: string) {
+  const items = await db.orderItem.findMany({ where: { orderId } });
+  await db.$transaction(
+    items
+      .filter((i) => i.variantId)
+      .map((i) =>
+        db.productVariant.update({
+          where: { id: i.variantId as string },
+          data: { stock: { increment: i.quantity } },
+        }),
+      ),
+  );
+}
+
+/** Refunds an order via its payment provider, restocks, and marks it REFUNDED. */
+export async function refundOrder(
+  orderId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order) return { ok: false, error: "Order not found." };
+  if (order.status === "REFUNDED") return { ok: true };
+
+  try {
+    if (order.paymentProvider === "stripe" && order.paymentRef && stripe) {
+      await stripe.refunds.create({ payment_intent: order.paymentRef });
+    } else if (order.paymentProvider === "paypal" && order.paymentRef) {
+      const ok = await paypalRefund(order.paymentRef);
+      if (!ok) return { ok: false, error: "PayPal refund failed." };
+    }
+    // "simulated" provider: nothing external to refund.
+    await restockOrder(orderId);
+    await db.order.update({
+      where: { id: orderId },
+      data: { status: "REFUNDED", refundedAt: new Date() },
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Refund failed." };
+  }
+}
+
+/** Cancels an unfulfilled order, restocking if it was already paid. */
+export async function cancelOrder(orderId: string): Promise<{ ok: boolean }> {
+  const order = await db.order.findUnique({ where: { id: orderId } });
+  if (!order) return { ok: false };
+  if (["PAID", "SHIPPED"].includes(order.status)) await restockOrder(orderId);
+  await db.order.update({ where: { id: orderId }, data: { status: "CANCELLED" } });
+  return { ok: true };
+}
+
+/** Marks an order shipped with tracking and emails the customer. */
+export async function markOrderShipped(
+  orderId: string,
+  info: { carrier: string; tracking: string; labelUrl?: string },
+): Promise<{ ok: boolean }> {
+  const order = await db.order.update({
+    where: { id: orderId },
+    data: {
+      status: "SHIPPED",
+      trackingCarrier: info.carrier,
+      trackingNumber: info.tracking,
+      labelUrl: info.labelUrl ?? null,
+      shippedAt: new Date(),
+    },
+  });
+  await sendShippingNotification({
+    to: order.email,
+    orderNumber: order.number,
+    carrier: info.carrier,
+    tracking: info.tracking,
+    siteUrl: siteUrl(),
+  });
+  return { ok: true };
 }

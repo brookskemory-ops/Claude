@@ -25,7 +25,10 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: false, error: "Payment not completed" }, { status: 400 });
   }
 
-  const fin = await finalizeOrder(orderId, { provider: "paypal", ref: data.id });
+  // Store the capture id (needed to issue refunds later), falling back to the order id.
+  const captureId =
+    data.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? data.id;
+  const fin = await finalizeOrder(orderId, { provider: "paypal", ref: captureId });
   if (!fin.ok) return Response.json({ ok: false, error: fin.error }, { status: 400 });
 
   return Response.json({ ok: true, number: fin.number });

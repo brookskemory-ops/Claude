@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import {
   createSession,
   destroySession,
+  getSession,
   hashPassword,
   requireUser,
   verifyPassword,
@@ -102,6 +103,35 @@ export async function register(_prev: AuthResult | null, formData: FormData): Pr
 export async function logout() {
   destroySession();
   redirect("/");
+}
+
+const changePwSchema = z.object({
+  current: z.string().min(1, "Enter your current password"),
+  next: z.string().min(6, "New password must be at least 6 characters"),
+});
+
+export async function changePassword(_prev: AuthResult | null, formData: FormData): Promise<AuthResult> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "You must be signed in." };
+
+  const parsed = changePwSchema.safeParse({
+    current: formData.get("current"),
+    next: formData.get("next"),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const user = await db.user.findUnique({ where: { id: session.sub } });
+  if (!user || !(await verifyPassword(parsed.data.current, user.passwordHash))) {
+    return { ok: false, error: "Current password is incorrect." };
+  }
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await hashPassword(parsed.data.next) },
+  });
+  return { ok: true, message: "Password updated." };
 }
 
 const emailSchema = z.object({ email: z.string().email() });

@@ -26,3 +26,13 @@ export async function paypalAccessToken(): Promise<string> {
   const data = (await res.json()) as { access_token: string };
   return data.access_token;
 }
+
+export async function paypalRefund(captureId: string): Promise<boolean> {
+  const token = await paypalAccessToken();
+  const res = await fetch(`${paypalBase()}/v2/payments/captures/${captureId}/refund`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    cache: "no-store",
+  });
+  return res.ok;
+}

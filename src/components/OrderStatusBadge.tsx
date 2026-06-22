@@ -4,6 +4,7 @@ const STYLES: Record<string, string> = {
   SHIPPED: "bg-ink-soft text-paper",
   DELIVERED: "border border-ink text-ink",
   CANCELLED: "border border-line text-ink-muted line-through",
+  REFUNDED: "border border-line text-ink-muted",
 };
 
 export default function OrderStatusBadge({ status }: { status: string }) {

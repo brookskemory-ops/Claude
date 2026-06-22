@@ -35,6 +35,7 @@ export const ORDER_STATUSES = [
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",
+  "REFUNDED",
 ] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];

@@ -37,7 +37,7 @@ export default async function AdminOrders() {
               {orders.map((o) => (
                 <tr key={o.id}>
                   <td className="px-4 py-3 font-medium">
-                    <Link href={`/order/${o.number}`} className="hover:underline">
+                    <Link href={`/admin/orders/${o.id}`} className="hover:underline">
                       {o.number}
                     </Link>
                   </td>

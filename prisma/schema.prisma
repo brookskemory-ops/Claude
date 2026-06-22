@@ -130,9 +130,24 @@ model Order {
   couponCode      String?
   shippingAddress String // JSON
   billingAddress  String // JSON
+  trackingNumber  String?
+  trackingCarrier String?
+  labelUrl        String?
+  shippedAt       DateTime?
+  refundedAt      DateTime?
   items           OrderItem[]
+  returns         ReturnRequest[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+}
+
+model ReturnRequest {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  reason    String
+  status    String   @default("REQUESTED") // REQUESTED | APPROVED | REJECTED | COMPLETED
+  createdAt DateTime @default(now())
 }
 
 model OrderItem {

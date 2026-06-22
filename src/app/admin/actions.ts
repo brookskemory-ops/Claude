@@ -6,6 +6,14 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { CATEGORIES, ORDER_STATUSES } from "@/lib/types";
+import { buyCheapestLabel } from "@/lib/shipping";
+import { markOrderShipped, refundOrder, cancelOrder } from "@/lib/orders";
+
+function revalidateOrder(id: string) {
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${id}`);
+  revalidatePath("/account");
+}
 
 function slugify(input: string): string {
   return input.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -248,4 +256,64 @@ export async function deleteCoupon(formData: FormData) {
   await requireAdmin();
   await db.coupon.delete({ where: { id: String(formData.get("id")) } });
   revalidatePath("/admin/coupons");
+}
+
+// ---- Fulfillment ----
+
+export async function markShipped(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const carrier = String(formData.get("carrier") || "Manual");
+  const tracking = String(formData.get("tracking") || "");
+  if (!tracking) return;
+  await markOrderShipped(id, { carrier, tracking });
+  revalidateOrder(id);
+}
+
+export async function buyLabel(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const order = await db.order.findUnique({ where: { id } });
+  if (!order) return;
+  const addr = JSON.parse(order.shippingAddress);
+  const result = await buyCheapestLabel(addr);
+  if (result.ok) {
+    await markOrderShipped(id, {
+      carrier: result.carrier,
+      tracking: result.tracking,
+      labelUrl: result.labelUrl,
+    });
+  }
+  revalidateOrder(id);
+}
+
+export async function markDelivered(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  await db.order.update({ where: { id }, data: { status: "DELIVERED" } });
+  revalidateOrder(id);
+}
+
+export async function refundOrderAction(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  await refundOrder(id);
+  revalidateOrder(id);
+}
+
+export async function cancelOrderAction(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  await cancelOrder(id);
+  revalidateOrder(id);
+}
+
+export async function updateReturn(formData: FormData) {
+  await requireAdmin();
+  const returnId = String(formData.get("returnId"));
+  const orderId = String(formData.get("orderId"));
+  const status = String(formData.get("status"));
+  if (!["REQUESTED", "APPROVED", "REJECTED", "COMPLETED"].includes(status)) return;
+  await db.returnRequest.update({ where: { id: returnId }, data: { status } });
+  revalidateOrder(orderId);
 }

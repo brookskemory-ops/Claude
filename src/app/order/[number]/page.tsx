@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { formatPrice, formatDateTime } from "@/lib/format";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
+import { requestReturn } from "./actions";
 
 export default async function OrderPage({
   params,
@@ -14,7 +15,7 @@ export default async function OrderPage({
 }) {
   const order = await db.order.findUnique({
     where: { number: params.number },
-    include: { items: true },
+    include: { items: true, returns: { orderBy: { createdAt: "desc" } } },
   });
 
   if (!order) notFound();
@@ -26,8 +27,18 @@ export default async function OrderPage({
     notFound();
   }
 
+  // COA links come from each item's product.
+  const slugs = Array.from(new Set(order.items.map((i) => i.productSlug)));
+  const products = await db.product.findMany({
+    where: { slug: { in: slugs } },
+    select: { slug: true, coaUrl: true },
+  });
+  const coaBySlug = new Map(products.map((p) => [p.slug, p.coaUrl]));
+
   const shipping = JSON.parse(order.shippingAddress) as Record<string, string>;
   const confirmed = searchParams.confirmed === "1";
+  const isOwner = !!session && session.sub === order.userId;
+  const canReturn = isOwner && ["PAID", "SHIPPED", "DELIVERED"].includes(order.status);
 
   return (
     <div className="container-site max-w-3xl py-12">
@@ -54,6 +65,13 @@ export default async function OrderPage({
         <OrderStatusBadge status={order.status} />
       </div>
 
+      {order.trackingNumber && (
+        <div className="mt-6 border border-line bg-paper-soft px-4 py-3 text-sm">
+          Shipped via <strong>{order.trackingCarrier}</strong> · Tracking{" "}
+          <strong>{order.trackingNumber}</strong>
+        </div>
+      )}
+
       <div className="mt-8 border-y border-line">
         <ul className="divide-y divide-line">
           {order.items.map((item) => (
@@ -65,6 +83,16 @@ export default async function OrderPage({
                 <p className="text-xs text-ink-muted">
                   {item.variantLabel ? `${item.variantLabel} · ` : ""}Qty {item.quantity} · {formatPrice(item.unitPrice)} each
                 </p>
+                {coaBySlug.get(item.productSlug) && (
+                  <a
+                    href={coaBySlug.get(item.productSlug) as string}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs underline hover:text-ink"
+                  >
+                    Certificate of Analysis
+                  </a>
+                )}
               </div>
               <span className="text-sm font-medium">
                 {formatPrice(item.unitPrice * item.quantity)}
@@ -104,6 +132,37 @@ export default async function OrderPage({
           </dl>
         </div>
       </div>
+
+      {/* Returns */}
+      {(order.returns.length > 0 || canReturn) && (
+        <div className="mt-10 border-t border-line pt-8">
+          <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+            Returns
+          </h3>
+          {order.returns.length > 0 ? (
+            <ul className="space-y-2 text-sm">
+              {order.returns.map((r) => (
+                <li key={r.id} className="flex items-center gap-3">
+                  <span className="badge border border-line text-ink-muted">{r.status}</span>
+                  <span className="text-ink-muted">{r.reason}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <form action={requestReturn} className="max-w-lg space-y-3">
+              <input type="hidden" name="orderId" value={order.id} />
+              <input type="hidden" name="number" value={order.number} />
+              <textarea
+                name="reason"
+                rows={3}
+                className="input"
+                placeholder="Reason for return request"
+              />
+              <button className="btn-outline btn-sm">Request a Return</button>
+            </form>
+          )}
+        </div>
+      )}
 
       <div className="mt-10 flex gap-3">
         <Link href="/shop" className="btn-outline">
