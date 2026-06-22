@@ -21,15 +21,23 @@ export async function submitContact(
     return { ok: false, error: "Please enter a valid email address." };
   }
 
+  let sent = false;
   try {
-    await sendContactMessage({
+    sent = await sendContactMessage({
       name: `${first} ${last}`.trim(),
       email,
       subject,
       message,
     });
   } catch {
-    return { ok: false, error: "Something went wrong. Please email us directly." };
+    sent = false;
+  }
+
+  if (!sent) {
+    return {
+      ok: false,
+      error: "Couldn't send right now — please email support@axevia.co directly.",
+    };
   }
 
   return { ok: true };

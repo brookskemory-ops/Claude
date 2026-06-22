@@ -5,21 +5,25 @@ const apiKey = process.env.RESEND_API_KEY;
 const from = process.env.EMAIL_FROM || "Axevia <support@axevia.co>";
 const resend = apiKey ? new Resend(apiKey) : null;
 
-type SendArgs = { to: string; subject: string; html: string };
+type SendArgs = { to: string; subject: string; html: string; replyTo?: string };
 
 /**
- * Sends an email via Resend. When RESEND_API_KEY is unset (dev/demo), logs to the
- * console instead so flows still work without an email provider configured.
+ * Sends an email via Resend. Returns true only when Resend accepts the send.
+ * When RESEND_API_KEY is unset (dev/demo) it logs to the console and returns false
+ * so callers that need to confirm delivery (e.g. the contact form) can report failure.
+ * Fire-and-forget callers can simply ignore the return value.
  */
-export async function sendEmail({ to, subject, html }: SendArgs): Promise<void> {
+export async function sendEmail({ to, subject, html, replyTo }: SendArgs): Promise<boolean> {
   if (!resend) {
     console.log(`\n[email:dev] To: ${to}\n[email:dev] Subject: ${subject}\n`);
-    return;
+    return false;
   }
   try {
-    await resend.emails.send({ from, to, subject, html });
+    await resend.emails.send({ from, to, subject, html, replyTo });
+    return true;
   } catch (err) {
     console.error("[email] send failed:", err);
+    return false;
   }
 }
 
@@ -133,15 +137,16 @@ export async function sendContactMessage(args: {
   email: string;
   subject: string;
   message: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const body = `
     <p><strong>From:</strong> ${esc(args.name)} &lt;${esc(args.email)}&gt;</p>
     <p><strong>Subject:</strong> ${esc(args.subject)}</p>
     <p style="white-space:pre-wrap;border-left:2px solid #0a0a0a;padding-left:12px;margin-top:16px">${esc(args.message)}</p>`;
-  await sendEmail({
+  return sendEmail({
     to: process.env.CONTACT_INBOX || "support@axevia.co",
+    replyTo: args.email,
     subject: `Contact form: ${args.subject || "(no subject)"}`,
     html: layout("New contact message", body),
   });
