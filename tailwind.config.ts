@@ -20,6 +20,11 @@ const config: Config = {
           muted: "#f1f1f1",
         },
         line: "#e5e5e5",
+        accent: {
+          DEFAULT: "#2563eb",
+          soft: "#1d4ed8",
+          tint: "#eff4ff",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],

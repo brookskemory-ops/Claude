@@ -1,22 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LogoMonogram } from "@/components/Logo";
+import { MoleculeLattice, PeptideChain } from "@/components/graphics";
 
 export const metadata: Metadata = { title: "About & Quality" };
 
 export default function AboutPage() {
   return (
     <div>
-      <section className="bg-ink text-paper">
-        <div className="container-site py-20 text-center">
+      <section className="relative overflow-hidden bg-ink text-paper">
+        <MoleculeLattice className="pointer-events-none absolute inset-0 text-paper/[0.06]" />
+        <div className="container-site relative py-20 text-center">
           <p className="eyebrow text-paper/60">About Axevia</p>
           <h1 className="mx-auto mt-4 max-w-2xl text-4xl font-bold tracking-tight sm:text-5xl">
-            Research materials you can trust.
+            Research materials you can <span className="text-accent">trust.</span>
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-paper/70">
             Axevia supplies high-purity research peptides backed by independent analytical testing,
             so your work starts with materials of known identity and quality.
           </p>
+          <PeptideChain className="mx-auto mt-8 w-64 max-w-full text-paper" />
         </div>
       </section>
 

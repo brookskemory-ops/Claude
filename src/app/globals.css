@@ -14,7 +14,16 @@
     @apply bg-paper text-ink;
   }
   ::selection {
-    @apply bg-ink text-paper;
+    @apply bg-accent text-paper;
+  }
+  /* Consistent, accessible focus ring using the accent */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  summary:focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-paper;
   }
 }
 
@@ -29,6 +38,9 @@
   .btn-primary {
     @apply btn bg-ink text-paper hover:bg-ink-soft;
   }
+  .btn-accent {
+    @apply btn bg-accent text-paper hover:bg-accent-soft;
+  }
   .btn-outline {
     @apply btn border border-ink bg-transparent text-ink hover:bg-ink hover:text-paper;
   }
@@ -40,7 +52,15 @@
   }
 
   .input {
-    @apply w-full border border-line bg-paper px-4 py-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-ink focus:outline-none;
+    @apply w-full border border-line bg-paper px-4 py-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-accent focus:outline-none;
+  }
+
+  .badge-accent {
+    @apply badge bg-accent text-paper;
+  }
+
+  .link-accent {
+    @apply text-accent underline-offset-2 hover:underline;
   }
   .label {
     @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted;

@@ -2,6 +2,15 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
 import { LogoMonogram } from "@/components/Logo";
+import {
+  MoleculeLattice,
+  PeptideChain,
+  Helix,
+  IconPurity,
+  IconTested,
+  IconCOA,
+  IconShipping,
+} from "@/components/graphics";
 
 export default async function HomePage() {
   const featured = await db.product.findMany({
@@ -14,24 +23,25 @@ export default async function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-ink text-paper">
-        <div className="container-site grid items-center gap-10 py-20 lg:grid-cols-2 lg:py-28">
+      <section className="relative overflow-hidden bg-ink text-paper">
+        <MoleculeLattice className="pointer-events-none absolute inset-0 text-paper/[0.06]" />
+        <div className="container-site relative grid items-center gap-10 py-20 lg:grid-cols-2 lg:py-28">
           <div className="animate-fade-up">
             <p className="eyebrow text-paper/60">Research Grade Peptides</p>
             <h1 className="mt-5 text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
               Purity you
               <br />
-              can verify.
+              can <span className="text-accent">verify.</span>
             </h1>
             <p className="mt-6 max-w-md text-paper/70">
               Axevia supplies high-purity, third-party tested research peptides to qualified
               laboratories and research professionals. Every lot, fully documented.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/shop" className="bg-paper px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-ink hover:bg-paper/90">
+              <Link href="/shop" className="btn-accent">
                 Browse Catalog
               </Link>
-              <Link href="/about" className="border border-paper/40 px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-paper hover:bg-paper hover:text-ink">
+              <Link href="/about" className="border border-paper/40 px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-paper hover:text-ink">
                 Quality Standards
               </Link>
             </div>
@@ -41,7 +51,9 @@ export default async function HomePage() {
           </div>
           <div className="flex justify-center">
             <div className="relative flex aspect-square w-full max-w-md items-center justify-center border border-paper/20">
-              <LogoMonogram size={180} invert />
+              <Helix className="absolute right-6 top-1/2 h-3/4 -translate-y-1/2 text-paper/70" />
+              <LogoMonogram size={150} invert />
+              <PeptideChain className="absolute bottom-6 left-1/2 w-3/4 -translate-x-1/2 text-paper" />
             </div>
           </div>
         </div>
@@ -51,12 +63,13 @@ export default async function HomePage() {
       <section className="border-b border-line">
         <div className="container-site grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { t: "≥99% Purity", d: "High-purity compounds, verified per lot." },
-            { t: "Third-Party Tested", d: "HPLC and mass-spec analysis." },
-            { t: "COA Included", d: "Certificate of Analysis for every batch." },
-            { t: "Cold-Chain Shipping", d: "Lyophilized and shipped to spec." },
+            { Icon: IconPurity, t: "≥99% Purity", d: "High-purity compounds, verified per lot." },
+            { Icon: IconTested, t: "Third-Party Tested", d: "HPLC and mass-spec analysis." },
+            { Icon: IconCOA, t: "COA Included", d: "Certificate of Analysis for every batch." },
+            { Icon: IconShipping, t: "Cold-Chain Shipping", d: "Lyophilized and shipped to spec." },
           ].map((b) => (
             <div key={b.t} className="bg-paper px-6 py-10 text-center">
+              <b.Icon className="mx-auto mb-4 h-8 w-8 text-ink" />
               <h3 className="text-sm font-semibold uppercase tracking-[0.14em]">{b.t}</h3>
               <p className="mt-2 text-sm text-ink-muted">{b.d}</p>
             </div>
@@ -113,7 +126,7 @@ export default async function HomePage() {
               { k: "-20°C", v: "Lyophilized storage" },
             ].map((s) => (
               <div key={s.v} className="bg-paper-soft p-8">
-                <p className="text-2xl font-bold">{s.k}</p>
+                <p className="text-2xl font-bold text-accent">{s.k}</p>
                 <p className="mt-1 text-sm text-ink-muted">{s.v}</p>
               </div>
             ))}
@@ -123,15 +136,18 @@ export default async function HomePage() {
 
       {/* Compliance callout */}
       <section className="container-site py-20">
-        <div className="border border-ink p-10 text-center">
-          <h2 className="text-2xl font-bold tracking-tight">For research professionals</h2>
-          <p className="mx-auto mt-3 max-w-xl text-ink-muted">
-            Axevia products are sold strictly for laboratory and in-vitro research. By purchasing,
-            you confirm you are a qualified researcher and agree to our Research-Use-Only terms.
-          </p>
-          <Link href="/research-use-policy" className="btn-outline mt-7">
-            Research-Use Policy
-          </Link>
+        <div className="relative overflow-hidden border border-ink bg-ink p-10 text-center text-paper">
+          <MoleculeLattice className="pointer-events-none absolute inset-0 text-paper/[0.06]" />
+          <div className="relative">
+            <h2 className="text-2xl font-bold tracking-tight">For research professionals</h2>
+            <p className="mx-auto mt-3 max-w-xl text-paper/70">
+              Axevia products are sold strictly for laboratory and in-vitro research. By purchasing,
+              you confirm you are a qualified researcher and agree to our Research-Use-Only terms.
+            </p>
+            <Link href="/research-use-policy" className="btn-accent mt-7">
+              Research-Use Policy
+            </Link>
+          </div>
         </div>
       </section>
     </>

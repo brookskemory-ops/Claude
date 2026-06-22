@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import ProductImage from "@/components/ProductImage";
 import ProductCard from "@/components/ProductCard";
 import ProductPurchase, { type PurchaseVariant } from "@/components/ProductPurchase";
+import { minEffectivePrice, totalStock } from "@/lib/pricing";
 
 export async function generateMetadata({
   params,
@@ -53,8 +54,30 @@ export default async function ProductPage({
     { label: "Storage", value: product.storage },
   ].filter((s) => s.value);
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description || product.tagline,
+    category: product.category,
+    brand: { "@type": "Brand", name: "Axevia" },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "USD",
+      price: minEffectivePrice(product.variants).toFixed(2),
+      availability:
+        totalStock(product.variants) > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+    },
+  };
+
   return (
     <div className="container-site py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav className="mb-8 text-xs text-ink-muted">
         <Link href="/shop" className="hover:text-ink">Shop</Link>
         <span className="mx-2">/</span>

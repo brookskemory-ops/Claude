@@ -9,13 +9,24 @@ import CookieConsent from "@/components/CookieConsent";
 import ReferralCapture from "@/components/ReferralCapture";
 import { getSession } from "@/lib/auth";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://axevia.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Axevia — Research Grade Peptides",
     template: "%s · Axevia",
   },
   description:
     "Axevia supplies high-purity, third-party tested research peptides to qualified laboratories and research professionals. For laboratory research use only.",
+  openGraph: {
+    title: "Axevia — Research Grade Peptides",
+    description: "High-purity, third-party tested research peptides. For laboratory research use only.",
+    url: siteUrl,
+    siteName: "Axevia",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default async function RootLayout({
@@ -28,6 +39,19 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Axevia",
+              url: siteUrl,
+              description:
+                "High-purity, third-party tested research peptides for qualified research professionals.",
+            }),
+          }}
+        />
         <CartProvider>
           <Suspense>
             <ReferralCapture />

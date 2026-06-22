@@ -29,9 +29,7 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
           </span>
         )}
         {onSale && !outOfStock && (
-          <span className="badge absolute right-3 top-3 border border-ink bg-paper text-ink">
-            Sale
-          </span>
+          <span className="badge-accent absolute right-3 top-3">Sale</span>
         )}
         {outOfStock && (
           <span className="badge absolute right-3 top-3 border border-ink bg-paper text-ink">

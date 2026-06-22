@@ -4,33 +4,38 @@ type Props = {
   className?: string;
 };
 
-// Brand-styled black & white SVG placeholders for research-peptide products.
-// Swapping in real product/COA photography later means replacing this component's output.
+// Refined black & white research-vial illustrations with a clinical accent.
+function Vial({ tall = false }: { tall?: boolean }) {
+  const bodyTop = 78;
+  const bodyH = tall ? 96 : 80;
+  const bottom = bodyTop + bodyH;
+  return (
+    <g>
+      {/* cap */}
+      <rect x="84" y="52" width="32" height="14" rx="3" className="fill-accent" />
+      {/* neck */}
+      <rect x="88" y="66" width="24" height="12" className="fill-ink" />
+      {/* glass body */}
+      <path
+        d={`M82 ${bodyTop} h36 v${bodyH - 16} a18 18 0 0 1 -18 18 a18 18 0 0 1 -18 -18 z`}
+        className="fill-paper stroke-ink"
+        strokeWidth="3"
+      />
+      {/* contents (lyophilized) */}
+      <path
+        d={`M82 ${bottom - 44} h36 v${28} a18 18 0 0 1 -18 18 a18 18 0 0 1 -18 -18 z`}
+        className="fill-ink"
+      />
+      {/* meniscus accent line */}
+      <line x1="82" y1={bottom - 44} x2="118" y2={bottom - 44} className="stroke-accent" strokeWidth="2" />
+    </g>
+  );
+}
+
 const SHAPES: Record<string, JSX.Element> = {
-  vial: (
-    <g>
-      <rect x="86" y="58" width="28" height="10" rx="2" />
-      <rect x="84" y="68" width="32" height="8" rx="1" />
-      <path d="M86 76 h28 v74 a14 14 0 0 1 -14 14 a14 14 0 0 1 -14 -14 z" />
-      <rect x="86" y="120" width="28" height="30" className="fill-paper" />
-    </g>
-  ),
-  solvent: (
-    <g>
-      <rect x="92" y="54" width="16" height="14" rx="2" />
-      <rect x="84" y="68" width="32" height="12" rx="2" />
-      <path d="M82 80 h36 v62 a10 10 0 0 1 -10 10 h-16 a10 10 0 0 1 -10 -10 z" />
-      <rect x="82" y="120" width="36" height="22" className="fill-paper" />
-    </g>
-  ),
-  default: (
-    <g>
-      <rect x="86" y="58" width="28" height="10" rx="2" />
-      <rect x="84" y="68" width="32" height="8" rx="1" />
-      <path d="M86 76 h28 v74 a14 14 0 0 1 -14 14 a14 14 0 0 1 -14 -14 z" />
-      <rect x="86" y="118" width="28" height="32" className="fill-paper" />
-    </g>
-  ),
+  vial: <Vial />,
+  solvent: <Vial tall />,
+  default: <Vial />,
 };
 
 export default function ProductImage({ imageKey, name, className }: Props) {
@@ -44,7 +49,12 @@ export default function ProductImage({ imageKey, name, className }: Props) {
       preserveAspectRatio="xMidYMid meet"
     >
       <rect width="200" height="220" className="fill-paper-muted" />
-      <g className="fill-ink">{shape}</g>
+      {/* faint molecular accent */}
+      <g className="text-line" opacity="0.7">
+        <path d="M150 36 l16 9 v18 l-16 9 -16 -9 v-18 z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      </g>
+      <circle cx="150" cy="54" r="3" className="fill-accent" />
+      {shape}
     </svg>
   );
 }

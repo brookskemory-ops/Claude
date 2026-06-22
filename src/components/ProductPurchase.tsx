@@ -69,7 +69,7 @@ export default function ProductPurchase({
             {formatPrice(selected.price)}
           </span>
         )}
-        {off != null && <span className="badge bg-ink text-paper">{off}% Off</span>}
+        {off != null && <span className="badge-accent">{off}% Off</span>}
       </div>
 
       <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
