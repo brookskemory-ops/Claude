@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-paper text-ink;
+  }
+  ::selection {
+    @apply bg-ink text-paper;
+  }
+}
+
+@layer components {
+  .container-site {
+    @apply mx-auto w-full max-w-site px-5 sm:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply btn bg-ink text-paper hover:bg-ink-soft;
+  }
+  .btn-outline {
+    @apply btn border border-ink bg-transparent text-ink hover:bg-ink hover:text-paper;
+  }
+  .btn-ghost {
+    @apply btn text-ink hover:bg-paper-muted;
+  }
+  .btn-sm {
+    @apply px-4 py-2 text-[10px];
+  }
+
+  .input {
+    @apply w-full border border-line bg-paper px-4 py-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-ink focus:outline-none;
+  }
+  .label {
+    @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted;
+  }
+
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-brand text-ink-muted;
+  }
+
+  .card {
+    @apply border border-line bg-paper;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em];
+  }
+}
