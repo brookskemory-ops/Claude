@@ -8,10 +8,22 @@ import CartDrawer from "@/components/CartDrawer";
 import { LogoWordmark } from "@/components/Logo";
 import type { SessionPayload } from "@/lib/types";
 
-const NAV = [
+type NavItem = {
+  label: string;
+  href?: string;
+  children?: { href: string; label: string }[];
+};
+
+const NAV: NavItem[] = [
   { href: "/shop", label: "Shop" },
   { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+  {
+    label: "Contact",
+    children: [
+      { href: "/contact", label: "Contact Us" },
+      { href: "/faq", label: "FAQ" },
+    ],
+  },
 ];
 
 export default function Header({
@@ -44,17 +56,45 @@ export default function Header({
           </Link>
 
           <nav className="hidden items-center gap-8 md:flex">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`text-xs font-semibold uppercase tracking-[0.14em] transition-colors hover:text-ink ${
-                  pathname.startsWith(item.href) ? "text-ink" : "text-ink-muted"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {NAV.map((item) =>
+              item.children ? (
+                <div key={item.label} className="group relative">
+                  <button
+                    className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.14em] transition-colors hover:text-ink ${
+                      item.children.some((c) => pathname.startsWith(c.href))
+                        ? "text-ink"
+                        : "text-ink-muted"
+                    }`}
+                  >
+                    {item.label}
+                    <span className="text-[8px]">▼</span>
+                  </button>
+                  <div className="absolute left-1/2 top-full hidden -translate-x-1/2 pt-3 group-hover:block">
+                    <div className="min-w-[150px] border border-line bg-paper py-1 shadow-sm">
+                      {item.children.map((c) => (
+                        <Link
+                          key={c.href}
+                          href={c.href}
+                          className="block px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted hover:bg-paper-muted hover:text-ink"
+                        >
+                          {c.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href as string}
+                  className={`text-xs font-semibold uppercase tracking-[0.14em] transition-colors hover:text-ink ${
+                    pathname.startsWith(item.href as string) ? "text-ink" : "text-ink-muted"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
           </nav>
 
           <div className="flex items-center gap-4">
@@ -91,16 +131,34 @@ export default function Header({
         {menuOpen && (
           <nav className="border-t border-line bg-paper md:hidden">
             <div className="container-site flex flex-col py-2">
-              {NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {NAV.map((item) =>
+                item.children ? (
+                  <div key={item.label} className="py-1">
+                    <p className="py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-ink-muted/60">
+                      {item.label}
+                    </p>
+                    {item.children.map((c) => (
+                      <Link
+                        key={c.href}
+                        href={c.href}
+                        onClick={() => setMenuOpen(false)}
+                        className="block py-2 pl-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted"
+                      >
+                        {c.label}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href as string}
+                    onClick={() => setMenuOpen(false)}
+                    className="py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted"
+                  >
+                    {item.label}
+                  </Link>
+                ),
+              )}
               {session?.role === "ADMIN" && (
                 <Link
                   href="/admin"

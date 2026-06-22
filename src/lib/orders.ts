@@ -12,7 +12,9 @@ import {
   sendOrderConfirmation,
   sendLowStockAlert,
   sendShippingNotification,
+  sendReferralReward,
 } from "@/lib/email";
+import { createUniqueCoupon, REFERRER_AMOUNT_OFF } from "@/lib/referral";
 import { formatPrice } from "@/lib/format";
 import { stripe } from "@/lib/stripe";
 import { paypalRefund } from "@/lib/paypal";
@@ -209,6 +211,32 @@ export async function finalizeOrder(
         to,
         items: low.map((v) => ({ name: v.product.name, label: v.label, stock: v.stock })),
       });
+    }
+  }
+
+  // Referral reward: when a referred customer completes their FIRST order, reward the referrer.
+  if (order.userId) {
+    const paidCount = await db.order.count({
+      where: { userId: order.userId, status: { in: ["PAID", "SHIPPED", "DELIVERED"] } },
+    });
+    if (paidCount === 1) {
+      const referral = await db.referral.findFirst({
+        where: { refereeId: order.userId, status: "PENDING" },
+      });
+      if (referral) {
+        const rewardCode = await createUniqueCoupon({
+          prefix: "REWARD",
+          amountOff: REFERRER_AMOUNT_OFF,
+        });
+        await db.referral.update({
+          where: { id: referral.id },
+          data: { status: "COMPLETED", referrerCouponCode: rewardCode },
+        });
+        const referrer = await db.user.findUnique({ where: { id: referral.referrerId } });
+        if (referrer) {
+          await sendReferralReward({ to: referrer.email, code: rewardCode, siteUrl: siteUrl() });
+        }
+      }
     }
   }
 

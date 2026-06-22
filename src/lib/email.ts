@@ -97,6 +97,22 @@ export async function sendLowStockAlert(args: {
   });
 }
 
+export async function sendReferralReward(args: {
+  to: string;
+  code: string;
+  siteUrl: string;
+}): Promise<void> {
+  const body = `
+    <p>Great news — someone you referred just placed their first order. Here&apos;s your reward:</p>
+    <p style="font-size:18px"><strong>${args.code}</strong> — apply it at checkout.</p>
+    <p><a href="${args.siteUrl}/shop" style="display:inline-block;background:#0a0a0a;color:#fff;padding:12px 20px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:.14em">Shop Now</a></p>`;
+  await sendEmail({
+    to: args.to,
+    subject: "You earned an Axevia referral reward",
+    html: layout("Referral reward", body),
+  });
+}
+
 export async function sendVerification(args: {
   to: string;
   verifyUrl: string;

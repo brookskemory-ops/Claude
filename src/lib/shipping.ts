@@ -35,6 +35,49 @@ export type LabelResult =
   | { ok: true; carrier: string; tracking: string; labelUrl: string }
   | { ok: false; error: string };
 
+export type TrackingEvent = {
+  status: string;
+  message: string;
+  datetime: string;
+  location: string;
+};
+export type TrackingInfo = {
+  status: string;
+  estDelivery: string | null;
+  events: TrackingEvent[];
+};
+
+/** Real-time tracking for a shipment via the EasyPost Tracker API. Null if not configured. */
+export async function getTracking(
+  trackingCode: string,
+  carrier?: string | null,
+): Promise<TrackingInfo | null> {
+  if (!apiKey || !trackingCode) return null;
+  try {
+    const res = await fetch("https://api.easypost.com/v2/trackers", {
+      method: "POST",
+      headers: { Authorization: auth(), "Content-Type": "application/json" },
+      body: JSON.stringify({ tracker: { tracking_code: trackingCode, carrier: carrier || undefined } }),
+      cache: "no-store",
+    });
+    const t = await res.json();
+    if (!res.ok) return null;
+    const events: TrackingEvent[] = (t.tracking_details || [])
+      .map((d: any) => ({
+        status: d.status || "",
+        message: d.message || "",
+        datetime: d.datetime || "",
+        location: [d.tracking_location?.city, d.tracking_location?.state]
+          .filter(Boolean)
+          .join(", "),
+      }))
+      .reverse();
+    return { status: t.status || "unknown", estDelivery: t.est_delivery_date || null, events };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Creates an EasyPost shipment to the order's address and buys the cheapest rate.
  * Uses a default parcel; returns tracking number and a label URL.

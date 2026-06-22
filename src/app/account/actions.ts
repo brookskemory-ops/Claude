@@ -3,7 +3,9 @@
 import crypto from "crypto";
 import { z } from "zod";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { createUniqueCoupon, REFEREE_PERCENT_OFF } from "@/lib/referral";
 import {
   createSession,
   destroySession,
@@ -95,6 +97,32 @@ export async function register(_prev: AuthResult | null, formData: FormData): Pr
     data: { userId: user.id, tokenHash: hash, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24) },
   });
   await sendVerification({ to: email, verifyUrl: `${siteUrl()}/account/verify?token=${raw}` });
+
+  // Referral attribution: if the visitor arrived via a referral link, record it and
+  // issue the new customer a welcome discount.
+  try {
+    const refCode = cookies().get("axevia_ref")?.value;
+    if (refCode) {
+      const referrer = await db.user.findUnique({ where: { referralCode: refCode } });
+      if (referrer && referrer.id !== user.id) {
+        const refereeCoupon = await createUniqueCoupon({
+          prefix: "WELCOME",
+          percentOff: REFEREE_PERCENT_OFF,
+        });
+        await db.referral.create({
+          data: {
+            referrerId: referrer.id,
+            refereeId: user.id,
+            refereeEmail: email,
+            status: "PENDING",
+            refereeCouponCode: refereeCoupon,
+          },
+        });
+      }
+    }
+  } catch {
+    // referral is best-effort; never block signup
+  }
 
   await createSession({ sub: user.id, email: user.email, name: user.name, role: "CUSTOMER" });
   return { ok: true };

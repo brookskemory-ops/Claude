@@ -16,6 +16,9 @@ model User {
   emailVerified      DateTime?
   taxExempt          Boolean              @default(false)
   exemptionCertUrl   String?
+  referralCode       String?              @unique
+  referralsMade      Referral[]           @relation("referrer")
+  referralReceived   Referral?            @relation("referee")
   addresses          Address[]
   orders             Order[]
   resetTokens        PasswordResetToken[]
@@ -165,6 +168,19 @@ model AuditLog {
   action     String
   detail     String   @default("")
   createdAt  DateTime @default(now())
+}
+
+model Referral {
+  id                 String   @id @default(cuid())
+  referrerId         String
+  referrer           User     @relation("referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  refereeId          String?  @unique
+  referee            User?    @relation("referee", fields: [refereeId], references: [id], onDelete: SetNull)
+  refereeEmail       String?
+  status             String   @default("PENDING") // PENDING | COMPLETED
+  refereeCouponCode  String?
+  referrerCouponCode String?
+  createdAt          DateTime @default(now())
 }
 
 model OrderItem {
