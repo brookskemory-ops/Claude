@@ -19,7 +19,11 @@ export default function ContactPage() {
               <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
                 Email
               </dt>
-              <dd className="mt-1">support@axevia.com</dd>
+              <dd className="mt-1">
+                <a href="mailto:support@axevia.co" className="underline-offset-2 hover:underline">
+                  support@axevia.co
+                </a>
+              </dd>
             </div>
             <div>
               <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">

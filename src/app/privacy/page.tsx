@@ -32,14 +32,14 @@ export default function PrivacyPage() {
         <S t="Your Rights">
           Depending on your location (e.g. GDPR/CCPA), you may request access, correction, deletion,
           or export of your data. You can delete your account from your account page or by contacting
-          us at [support@axevia.com].
+          us at support@axevia.co.
         </S>
         <S t="Data Retention & Security">
           We retain order records as required for legal/accounting purposes and apply reasonable
           safeguards. No method of transmission or storage is 100% secure.
         </S>
         <S t="Contact">
-          [Axevia LLC], [business mailing address], [support@axevia.com].
+          [Axevia LLC], [business mailing address], support@axevia.co.
         </S>
       </div>
     </div>

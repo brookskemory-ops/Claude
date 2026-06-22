@@ -18,7 +18,7 @@ export default function RefundPolicyPage() {
           incorrect. Opened or used items are non-returnable for safety and integrity reasons.
         </S>
         <S t="Damaged or Incorrect Orders">
-          Contact us within [7] days of delivery at [support@axevia.com] with your order number and
+          Contact us within [7] days of delivery at support@axevia.co with your order number and
           photos. We will arrange a replacement or refund for verified issues.
         </S>
         <S t="How to Request">
@@ -30,7 +30,7 @@ export default function RefundPolicyPage() {
           return. Original shipping is non-refundable unless the error was ours.
         </S>
         <S t="Contact">
-          [support@axevia.com], [business mailing address].
+          support@axevia.co, [business mailing address].
         </S>
       </div>
     </div>

@@ -2,7 +2,7 @@ import "server-only";
 import { Resend } from "resend";
 
 const apiKey = process.env.RESEND_API_KEY;
-const from = process.env.EMAIL_FROM || "Axevia <noreply@axevia.com>";
+const from = process.env.EMAIL_FROM || "Axevia <support@axevia.co>";
 const resend = apiKey ? new Resend(apiKey) : null;
 
 type SendArgs = { to: string; subject: string; html: string };

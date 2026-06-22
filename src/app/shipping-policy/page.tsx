@@ -33,7 +33,7 @@ export default function ShippingPolicyPage() {
           receive research materials at your destination.
         </S>
         <S t="Contact">
-          [support@axevia.com] for shipping questions.
+          support@axevia.co for shipping questions.
         </S>
       </div>
     </div>

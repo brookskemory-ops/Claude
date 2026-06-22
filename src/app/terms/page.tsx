@@ -45,7 +45,7 @@ export default function TermsPage() {
           These Terms are governed by the laws of [State], without regard to conflict-of-law rules.
         </S>
         <S t="8. Contact">
-          Questions about these Terms: [support@axevia.com], [business mailing address].
+          Questions about these Terms: support@axevia.co, [business mailing address].
         </S>
       </div>
     </div>

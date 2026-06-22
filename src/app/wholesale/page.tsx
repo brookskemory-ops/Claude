@@ -34,10 +34,10 @@ export default function WholesalePage() {
           send a quote.
         </p>
         <a
-          href="mailto:wholesale@axevia.co?subject=Wholesale%20Inquiry"
+          href="mailto:support@axevia.co?subject=Wholesale%20Inquiry"
           className="btn-primary mt-6"
         >
-          Email wholesale@axevia.co
+          Email support@axevia.co
         </a>
         <p className="mt-4 text-xs text-ink-muted">
           Prefer a form?{" "}
