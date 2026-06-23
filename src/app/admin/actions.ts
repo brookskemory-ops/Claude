@@ -403,3 +403,85 @@ export async function updateMaintenance(formData: FormData) {
   revalidateTag("site-config");
   revalidatePath("/admin/settings");
 }
+
+// ---- Blog posts ----
+
+const postSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  slug: z.string().optional(),
+  excerpt: z.string().optional().default(""),
+  body: z.string().optional().default(""),
+  coverImageKey: z.string().optional().default(""),
+  published: z.boolean().default(false),
+});
+
+function parsePost(formData: FormData) {
+  return postSchema.safeParse({
+    title: formData.get("title"),
+    slug: formData.get("slug") || undefined,
+    excerpt: formData.get("excerpt") || "",
+    body: formData.get("body") || "",
+    coverImageKey: formData.get("coverImageKey") || "",
+    published: formData.get("published") === "on",
+  });
+}
+
+export async function createPost(_prev: FormResult | null, formData: FormData): Promise<FormResult> {
+  await requireAdmin();
+  const parsed = parsePost(formData);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid post." };
+  const d = parsed.data;
+  const slug = d.slug && d.slug.length ? slugify(d.slug) : slugify(d.title);
+  if (await db.post.findUnique({ where: { slug } })) {
+    return { ok: false, error: "A post with that slug already exists." };
+  }
+  await db.post.create({
+    data: {
+      slug,
+      title: d.title,
+      excerpt: d.excerpt ?? "",
+      body: d.body ?? "",
+      coverImageKey: d.coverImageKey ?? "",
+      published: d.published,
+    },
+  });
+  await logAudit("post", `created ${slug}`);
+  revalidatePath("/admin/blog");
+  revalidatePath("/blog");
+  redirect("/admin/blog");
+}
+
+export async function updatePost(id: string, _prev: FormResult | null, formData: FormData): Promise<FormResult> {
+  await requireAdmin();
+  const parsed = parsePost(formData);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid post." };
+  const d = parsed.data;
+  const slug = d.slug && d.slug.length ? slugify(d.slug) : slugify(d.title);
+  if (await db.post.findFirst({ where: { slug, NOT: { id } } })) {
+    return { ok: false, error: "Another post already uses that slug." };
+  }
+  await db.post.update({
+    where: { id },
+    data: {
+      slug,
+      title: d.title,
+      excerpt: d.excerpt ?? "",
+      body: d.body ?? "",
+      coverImageKey: d.coverImageKey ?? "",
+      published: d.published,
+    },
+  });
+  await logAudit("post", `updated ${slug}`);
+  revalidatePath("/admin/blog");
+  revalidatePath("/blog");
+  revalidatePath(`/blog/${slug}`);
+  redirect("/admin/blog");
+}
+
+export async function deletePost(id: string): Promise<void> {
+  await requireAdmin();
+  await db.post.delete({ where: { id } });
+  await logAudit("post", `deleted ${id}`);
+  revalidatePath("/admin/blog");
+  revalidatePath("/blog");
+}

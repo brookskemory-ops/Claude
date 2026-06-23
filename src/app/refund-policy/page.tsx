@@ -14,7 +14,7 @@ export default function RefundPolicyPage() {
       <div className="mt-10 space-y-8 text-sm leading-relaxed text-ink-muted">
         <S t="Eligibility">
           Because products are research materials, returns are accepted only for unopened items in
-          original condition within [14] days of delivery, or for items that arrive damaged or
+          original condition within 30 days of delivery, or for items that arrive damaged or
           incorrect. Opened or used items are non-returnable for safety and integrity reasons.
         </S>
         <S t="Damaged or Incorrect Orders">

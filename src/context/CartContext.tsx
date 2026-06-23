@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import type { CartItem } from "@/lib/types";
+import { unitPriceForQty } from "@/lib/pricing";
 
 type CartContextValue = {
   items: CartItem[];
@@ -80,7 +81,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<CartContextValue>(() => {
     const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
-    const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+    const subtotal = items.reduce(
+      (sum, i) => sum + unitPriceForQty(i.unitPrice, i.quantity) * i.quantity,
+      0,
+    );
     return {
       items,
       itemCount,

@@ -7,15 +7,17 @@ import { submitReview } from "./reviewActions";
 export default function ProductReviewForm({
   productId,
   slug,
-  canReview,
+  signedIn,
+  hasPurchased,
 }: {
   productId: string;
   slug: string;
-  canReview: boolean;
+  signedIn: boolean;
+  hasPurchased: boolean;
 }) {
   const [state, formAction] = useFormState(submitReview, null);
 
-  if (!canReview) {
+  if (!signedIn) {
     return (
       <p className="text-sm text-ink-muted">
         <Link href={`/account/login?redirect=/product/${slug}`} className="underline hover:text-ink">
@@ -26,10 +28,18 @@ export default function ProductReviewForm({
     );
   }
 
+  if (!hasPurchased) {
+    return (
+      <p className="text-sm text-ink-muted">
+        Only verified purchasers can review this product.
+      </p>
+    );
+  }
+
   if (state?.ok) {
     return (
       <p className="border border-line bg-paper-soft px-4 py-3 text-sm text-ink-muted">
-        Thanks — your review was submitted and will appear once approved.
+        Thanks — your review is now live.
       </p>
     );
   }

@@ -9,9 +9,10 @@ import ProductCard from "@/components/ProductCard";
 import ProductPurchase, { type PurchaseVariant } from "@/components/ProductPurchase";
 import Stars from "@/components/Stars";
 import TrustBadges from "@/components/TrustBadges";
+import RecentlyViewed from "@/components/RecentlyViewed";
 import { IconCOA } from "@/components/graphics";
 import ProductReviewForm from "./ProductReviewForm";
-import { minEffectivePrice, totalStock, FREE_SHIPPING_THRESHOLD } from "@/lib/pricing";
+import { minEffectivePrice, totalStock, FREE_SHIPPING_THRESHOLD, QUANTITY_BREAKS } from "@/lib/pricing";
 
 export async function generateMetadata({
   params,
@@ -54,6 +55,17 @@ export default async function ProductPage({
   const avgRating = reviewCount
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviewCount
     : 0;
+
+  const hasPurchased = session
+    ? Boolean(
+        await db.orderItem.findFirst({
+          where: {
+            productSlug: product.slug,
+            order: { userId: session.sub, status: { in: ["PAID", "SHIPPED", "DELIVERED"] } },
+          },
+        }),
+      )
+    : false;
 
   const variants: PurchaseVariant[] = product.variants.map((v) => ({
     id: v.id,
@@ -147,6 +159,13 @@ export default async function ProductPage({
 
           <p className="mt-4 text-xs text-ink-muted">
             Free shipping over {formatPrice(FREE_SHIPPING_THRESHOLD)} · Ships within 1 business day
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">
+            Volume pricing:{" "}
+            {[...QUANTITY_BREAKS]
+              .sort((a, b) => a.min - b.min)
+              .map((b, i, arr) => `buy ${b.min}${i === arr.length - 1 ? "+" : ""} save ${b.percent}%`)
+              .join(" · ")}
           </p>
 
           {/* COA — front and center */}
@@ -242,7 +261,12 @@ export default async function ProductPage({
           </div>
           <div>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.14em]">Write a review</h3>
-            <ProductReviewForm productId={product.id} slug={product.slug} canReview={!!session} />
+            <ProductReviewForm
+              productId={product.id}
+              slug={product.slug}
+              signedIn={!!session}
+              hasPurchased={hasPurchased}
+            />
           </div>
         </div>
       </section>
@@ -257,6 +281,16 @@ export default async function ProductPage({
           </div>
         </section>
       )}
+
+      <RecentlyViewed
+        current={{
+          slug: product.slug,
+          name: product.name,
+          imageKey: product.imageKey,
+          category: product.category,
+          fromPrice: minEffectivePrice(product.variants),
+        }}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
 import { LogoMonogram } from "@/components/Logo";
 import TrustBadges from "@/components/TrustBadges";
+import { CATEGORIES } from "@/lib/types";
 
 export default async function HomePage() {
   const featured = await db.product.findMany({
@@ -80,6 +81,26 @@ export default async function HomePage() {
             ))}
           </div>
         )}
+      </section>
+
+      {/* Shop by category */}
+      <section className="border-t border-line">
+        <div className="container-site py-16">
+          <p className="eyebrow">Browse</p>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight">Shop by Category</h2>
+          <div className="mt-8 grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-4">
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat}
+                href={`/shop?category=${encodeURIComponent(cat)}`}
+                className="group flex items-center justify-between bg-paper px-6 py-8 transition-colors hover:bg-ink hover:text-paper"
+              >
+                <span className="text-sm font-semibold uppercase tracking-[0.14em]">{cat}</span>
+                <span className="text-ink-muted transition-colors group-hover:text-paper">→</span>
+              </Link>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Standard */}

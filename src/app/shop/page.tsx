@@ -4,10 +4,11 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
 import { CATEGORIES } from "@/lib/types";
+import { minEffectivePrice } from "@/lib/pricing";
 
 export const metadata: Metadata = { title: "Catalog" };
 
-const SORTS: Record<string, Prisma.ProductOrderByWithRelationInput> = {
+const DB_SORTS: Record<string, Prisma.ProductOrderByWithRelationInput> = {
   featured: { featured: "desc" },
   newest: { createdAt: "desc" },
   name: { name: "asc" },
@@ -16,27 +17,51 @@ const SORTS: Record<string, Prisma.ProductOrderByWithRelationInput> = {
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: { category?: string; sort?: string };
+  searchParams: { category?: string; sort?: string; q?: string; stock?: string };
 }) {
   const category = searchParams.category;
   const sort = searchParams.sort ?? "featured";
+  const q = (searchParams.q ?? "").trim();
+  const inStockOnly = searchParams.stock === "1";
+  const priceSort = sort === "price-asc" || sort === "price-desc";
 
-  const products = await db.product.findMany({
-    where: {
-      active: true,
-      ...(category && CATEGORIES.includes(category as never) ? { category } : {}),
-    },
+  const where: Prisma.ProductWhereInput = {
+    active: true,
+    ...(category && CATEGORIES.includes(category as never) ? { category } : {}),
+    ...(q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { tagline: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+    ...(inStockOnly ? { variants: { some: { active: true, stock: { gt: 0 } } } } : {}),
+  };
+
+  let products = await db.product.findMany({
+    where,
     include: {
       variants: { where: { active: true }, orderBy: { sortOrder: "asc" } },
       reviews: { where: { status: "APPROVED" }, select: { rating: true } },
     },
-    orderBy: SORTS[sort] ?? SORTS.featured,
+    orderBy: priceSort ? { createdAt: "desc" } : DB_SORTS[sort] ?? DB_SORTS.featured,
   });
+
+  if (priceSort) {
+    products = [...products].sort((a, b) => {
+      const pa = minEffectivePrice(a.variants);
+      const pb = minEffectivePrice(b.variants);
+      return sort === "price-asc" ? pa - pb : pb - pa;
+    });
+  }
 
   function tabHref(cat?: string) {
     const params = new URLSearchParams();
     if (cat) params.set("category", cat);
     if (sort !== "featured") params.set("sort", sort);
+    if (q) params.set("q", q);
+    if (inStockOnly) params.set("stock", "1");
     const qs = params.toString();
     return qs ? `/shop?${qs}` : "/shop";
   }
@@ -52,7 +77,7 @@ export default async function ShopPage({
         </p>
       </header>
 
-      <div className="flex flex-col gap-4 border-b border-line pb-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 border-b border-line pb-4">
         <nav className="flex flex-wrap gap-2">
           <CategoryTab href={tabHref()} label="All" active={!category} />
           {CATEGORIES.map((cat) => (
@@ -60,26 +85,43 @@ export default async function ShopPage({
           ))}
         </nav>
 
-        <form className="flex items-center gap-2">
+        <form className="flex flex-wrap items-center gap-3">
           {category && <input type="hidden" name="category" value={category} />}
-          <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
-            Sort
+          <input
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="Search compounds…"
+            className="min-w-[200px] flex-1 border border-line bg-paper px-3 py-2 text-sm focus:border-ink focus:outline-none"
+          />
+          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+            <input type="checkbox" name="stock" value="1" defaultChecked={inStockOnly} />
+            In stock
           </label>
-          <select
-            name="sort"
-            defaultValue={sort}
-            className="border border-line bg-paper px-3 py-2 text-xs focus:border-ink focus:outline-none"
-          >
-            <option value="featured">Featured</option>
-            <option value="newest">Newest</option>
-            <option value="name">A–Z</option>
-          </select>
+          <div className="flex items-center gap-2">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+              Sort
+            </label>
+            <select
+              name="sort"
+              defaultValue={sort}
+              className="border border-line bg-paper px-3 py-2 text-xs focus:border-ink focus:outline-none"
+            >
+              <option value="featured">Featured</option>
+              <option value="newest">Newest</option>
+              <option value="name">A–Z</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+            </select>
+          </div>
           <button type="submit" className="btn-outline btn-sm">Apply</button>
         </form>
       </div>
 
       {products.length === 0 ? (
-        <p className="py-20 text-center text-ink-muted">No products in this category yet.</p>
+        <p className="py-20 text-center text-ink-muted">
+          {q ? `No products match “${q}”.` : "No products in this category yet."}
+        </p>
       ) : (
         <div className="mt-10 grid grid-cols-2 gap-6 lg:grid-cols-4">
           {products.map((product) => (

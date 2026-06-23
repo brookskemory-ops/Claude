@@ -14,6 +14,7 @@ model User {
   passwordHash       String
   role               String               @default("CUSTOMER") // CUSTOMER | ADMIN
   emailVerified      DateTime?
+  points             Int                  @default(0) // loyalty points balance
   taxExempt          Boolean              @default(false)
   exemptionCertUrl   String?
   referralCode       String?              @unique
@@ -135,6 +136,7 @@ model Order {
   tax             Float       @default(0)
   total           Float
   couponCode      String?
+  pointsRedeemed  Int         @default(0) // loyalty points spent on this order
   shippingAddress String // JSON
   billingAddress  String // JSON
   trackingNumber  String?
@@ -196,6 +198,18 @@ model AbandonedCart {
   recovered  Boolean   @default(false)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+model Post {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  excerpt      String   @default("")
+  body         String   @default("") // markdown
+  coverImageKey String  @default("")
+  published    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model SiteConfig {

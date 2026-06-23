@@ -38,8 +38,8 @@ export async function submitReview(
   });
   if (already) return { ok: false, error: "You've already reviewed this product." };
 
-  // Verified if the user has a paid+ order containing this product.
-  const verified = Boolean(
+  // Only customers who have actually purchased the product may review it.
+  const purchased = Boolean(
     await db.orderItem.findFirst({
       where: {
         productSlug: parsed.data.slug,
@@ -47,6 +47,9 @@ export async function submitReview(
       },
     }),
   );
+  if (!purchased) {
+    return { ok: false, error: "You can only review products you've purchased." };
+  }
 
   await db.review.create({
     data: {
@@ -56,8 +59,8 @@ export async function submitReview(
       rating: parsed.data.rating,
       title: parsed.data.title,
       body: parsed.data.body,
-      status: "PENDING",
-      verified,
+      status: "APPROVED",
+      verified: true,
     },
   });
 

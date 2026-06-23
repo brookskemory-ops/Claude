@@ -6,7 +6,13 @@ import {
   isCouponValid,
   round2,
   shippingFor,
+  unitPriceForQty,
 } from "@/lib/pricing";
+
+// Loyalty: customers earn 1 point per $1 of merchandise paid; 100 points redeem for $5.
+export const POINTS_PER_DOLLAR = 1;
+export const POINTS_PER_REDEMPTION = 100;
+export const REDEMPTION_VALUE = 5;
 import { computeTax } from "@/lib/tax";
 import {
   sendOrderConfirmation,
@@ -51,7 +57,13 @@ export type CreateOrderInput = {
   couponCode?: string;
   ruoAcknowledged: boolean;
   saveAddress?: boolean;
+  pointsToRedeem?: number;
 };
+
+/** Points the merchandise total (after discounts) earns on a paid order. */
+function pointsEarnedFor(subtotal: number, discount: number): number {
+  return Math.max(0, Math.floor((subtotal - discount) * POINTS_PER_DOLLAR));
+}
 
 function generateOrderNumber(): string {
   const stamp = Date.now().toString(36).toUpperCase().slice(-6);
@@ -85,7 +97,7 @@ export async function createPendingOrder(
     if (variant.stock < item.quantity) {
       return { ok: false, error: `${variant.product.name} (${variant.label}) is out of stock.` };
     }
-    const unitPrice = effectivePrice(variant);
+    const unitPrice = unitPriceForQty(effectivePrice(variant), item.quantity);
     subtotal = round2(subtotal + unitPrice * item.quantity);
     lineItems.push({ variant, unitPrice, quantity: item.quantity });
   }
@@ -99,6 +111,27 @@ export async function createPendingOrder(
     if (coupon && isCouponValid(coupon)) {
       discount = couponDiscount(coupon, subtotal);
       couponCode = coupon.code;
+    }
+  }
+
+  // Loyalty redemption (signed-in users): redeem in whole 100-point blocks worth $5 each,
+  // capped by the user's balance and the merchandise remaining after any coupon.
+  let pointsRedeemed = 0;
+  if (input.userId && (input.pointsToRedeem ?? 0) >= POINTS_PER_REDEMPTION) {
+    const user = await db.user.findUnique({ where: { id: input.userId } });
+    const balance = user?.points ?? 0;
+    const block = POINTS_PER_REDEMPTION;
+    let blocks = Math.min(
+      Math.floor((input.pointsToRedeem ?? 0) / block),
+      Math.floor(balance / block),
+    );
+    const maxValue = round2(subtotal - discount);
+    if (blocks * REDEMPTION_VALUE > maxValue) {
+      blocks = Math.floor(maxValue / REDEMPTION_VALUE);
+    }
+    if (blocks > 0) {
+      pointsRedeemed = blocks * block;
+      discount = round2(discount + blocks * REDEMPTION_VALUE);
     }
   }
 
@@ -122,6 +155,7 @@ export async function createPendingOrder(
       tax,
       total,
       couponCode,
+      pointsRedeemed,
       shippingAddress: JSON.stringify(input.shipping),
       billingAddress: JSON.stringify(input.billing),
       items: {
@@ -202,6 +236,27 @@ export async function finalizeOrder(
     .updateMany({ where: { email: order.email.toLowerCase() }, data: { recovered: true } })
     .catch(() => {});
 
+  // Loyalty: award earned points, then deduct any redeemed on this order.
+  if (order.userId) {
+    const earned = pointsEarnedFor(order.subtotal, order.discount);
+    if (earned > 0) {
+      await db.user.update({
+        where: { id: order.userId },
+        data: { points: { increment: earned } },
+      });
+    }
+    if (order.pointsRedeemed > 0) {
+      const u = await db.user.findUnique({ where: { id: order.userId } });
+      const deduct = Math.min(order.pointsRedeemed, u?.points ?? 0);
+      if (deduct > 0) {
+        await db.user.update({
+          where: { id: order.userId },
+          data: { points: { decrement: deduct } },
+        });
+      }
+    }
+  }
+
   // Alert admin about any variants that dropped to/below their low-stock threshold.
   const variantIds = order.items.map((i) => i.variantId).filter(Boolean) as string[];
   if (variantIds.length) {
@@ -248,6 +303,20 @@ export async function finalizeOrder(
   return { ok: true, number: order.number };
 }
 
+/** Reverses loyalty points for a previously-paid order: removes earned, restores redeemed. */
+async function reverseLoyalty(order: {
+  userId: string | null;
+  subtotal: number;
+  discount: number;
+  pointsRedeemed: number;
+}) {
+  if (!order.userId) return;
+  const earned = pointsEarnedFor(order.subtotal, order.discount);
+  const u = await db.user.findUnique({ where: { id: order.userId } });
+  const newPoints = Math.max(0, (u?.points ?? 0) - earned + order.pointsRedeemed);
+  await db.user.update({ where: { id: order.userId }, data: { points: newPoints } });
+}
+
 /** Returns stock to inventory for a paid/shipped order being refunded or cancelled. */
 async function restockOrder(orderId: string) {
   const items = await db.orderItem.findMany({ where: { orderId } });
@@ -280,6 +349,7 @@ export async function refundOrder(
     }
     // "simulated" provider: nothing external to refund.
     await restockOrder(orderId);
+    if (["PAID", "SHIPPED", "DELIVERED"].includes(order.status)) await reverseLoyalty(order);
     await db.order.update({
       where: { id: orderId },
       data: { status: "REFUNDED", refundedAt: new Date() },
@@ -294,7 +364,10 @@ export async function refundOrder(
 export async function cancelOrder(orderId: string): Promise<{ ok: boolean }> {
   const order = await db.order.findUnique({ where: { id: orderId } });
   if (!order) return { ok: false };
-  if (["PAID", "SHIPPED"].includes(order.status)) await restockOrder(orderId);
+  if (["PAID", "SHIPPED"].includes(order.status)) {
+    await restockOrder(orderId);
+    await reverseLoyalty(order);
+  }
   await db.order.update({ where: { id: orderId }, data: { status: "CANCELLED" } });
   return { ok: true };
 }

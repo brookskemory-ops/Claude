@@ -78,3 +78,36 @@
     @apply inline-flex items-center px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em];
   }
 }
+
+@layer components {
+  .post-body h2 {
+    @apply mt-8 mb-3 text-xl font-bold text-ink;
+  }
+  .post-body h3 {
+    @apply mt-6 mb-2 text-lg font-semibold text-ink;
+  }
+  .post-body p {
+    @apply my-4 leading-relaxed;
+  }
+  .post-body ul {
+    @apply my-4 list-disc pl-6;
+  }
+  .post-body ol {
+    @apply my-4 list-decimal pl-6;
+  }
+  .post-body li {
+    @apply my-1;
+  }
+  .post-body a {
+    @apply text-ink underline;
+  }
+  .post-body strong {
+    @apply font-semibold text-ink;
+  }
+  .post-body blockquote {
+    @apply my-4 border-l-2 border-ink pl-4 italic;
+  }
+  .post-body code {
+    @apply bg-paper-muted px-1 py-0.5 text-sm;
+  }
+}

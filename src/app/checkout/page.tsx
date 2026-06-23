@@ -12,13 +12,18 @@ export default async function CheckoutPage() {
   const session = await getSession();
   let defaultEmail = "";
   let defaultAddress = null;
+  let pointsBalance = 0;
 
   if (session) {
     defaultEmail = session.email;
-    const addr = await db.address.findFirst({
-      where: { userId: session.sub },
-      orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
-    });
+    const [addr, user] = await Promise.all([
+      db.address.findFirst({
+        where: { userId: session.sub },
+        orderBy: [{ isDefault: "desc" }, { createdAt: "desc" }],
+      }),
+      db.user.findUnique({ where: { id: session.sub }, select: { points: true } }),
+    ]);
+    pointsBalance = user?.points ?? 0;
     if (addr) {
       defaultAddress = {
         recipient: addr.recipient,
@@ -38,6 +43,7 @@ export default async function CheckoutPage() {
       loggedIn={!!session}
       defaultEmail={defaultEmail}
       defaultAddress={defaultAddress}
+      pointsBalance={pointsBalance}
       stripeEnabled={stripeEnabled}
       paypalEnabled={paypalEnabled}
       authnetEnabled={authnetEnabled}

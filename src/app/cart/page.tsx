@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
-import { FREE_SHIPPING_THRESHOLD, FLAT_SHIPPING, shippingFor } from "@/lib/pricing";
+import {
+  FREE_SHIPPING_THRESHOLD,
+  FLAT_SHIPPING,
+  shippingFor,
+  unitPriceForQty,
+  quantityBreakPercent,
+} from "@/lib/pricing";
 import ProductImage from "@/components/ProductImage";
 
 export default function CartPage() {
@@ -46,9 +52,16 @@ export default function CartPage() {
                       </Link>
                       <p className="text-sm text-ink-muted">{item.variantLabel} · SKU {item.sku}</p>
                     </div>
-                    <span className="font-semibold">{formatPrice(item.unitPrice * item.quantity)}</span>
+                    <span className="font-semibold">
+                      {formatPrice(unitPriceForQty(item.unitPrice, item.quantity) * item.quantity)}
+                    </span>
                   </div>
-                  <p className="mt-1 text-sm text-ink-muted">{formatPrice(item.unitPrice)} each</p>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    {formatPrice(unitPriceForQty(item.unitPrice, item.quantity))} each
+                    {quantityBreakPercent(item.quantity) > 0 && (
+                      <span className="ml-1 text-ink">· saved {quantityBreakPercent(item.quantity)}%</span>
+                    )}
+                  </p>
                   <div className="mt-auto flex items-center justify-between pt-4">
                     <div className="flex items-center border border-line">
                       <button onClick={() => updateQuantity(item.variantId, item.quantity - 1)} className="flex h-9 w-9 items-center justify-center hover:bg-paper-muted">

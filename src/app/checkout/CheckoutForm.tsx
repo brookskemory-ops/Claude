@@ -60,6 +60,7 @@ export default function CheckoutForm({
   loggedIn,
   defaultEmail,
   defaultAddress,
+  pointsBalance,
   stripeEnabled,
   paypalEnabled,
   authnetEnabled,
@@ -68,6 +69,7 @@ export default function CheckoutForm({
   loggedIn: boolean;
   defaultEmail: string;
   defaultAddress: Address | null;
+  pointsBalance: number;
   stripeEnabled: boolean;
   paypalEnabled: boolean;
   authnetEnabled: boolean;
@@ -103,7 +105,17 @@ export default function CheckoutForm({
   const [submitting, setSubmitting] = useState(false);
   const orderIdRef = useRef<string | null>(null);
 
-  const discount = coupon?.discount ?? 0;
+  const [redeemBlocks, setRedeemBlocks] = useState(0);
+
+  const couponDiscount = coupon?.discount ?? 0;
+  const availableBlocks = Math.floor(pointsBalance / 100);
+  const maxBlocksByOrder = Math.max(0, Math.floor(round2(subtotal - couponDiscount) / 5));
+  const maxBlocks = Math.min(availableBlocks, maxBlocksByOrder);
+  const effectiveBlocks = Math.min(redeemBlocks, maxBlocks);
+  const pointsDiscount = effectiveBlocks * 5;
+  const redeemPoints = effectiveBlocks * 100;
+
+  const discount = round2(couponDiscount + pointsDiscount);
   const discounted = Math.max(0, round2(subtotal - discount));
   const shipCost = shippingFor(discounted);
   const total = round2(discounted + shipCost + tax);
@@ -161,6 +173,7 @@ export default function CheckoutForm({
       couponCode: coupon?.code ?? "",
       ruoAcknowledged: ruoAck,
       saveAddress: loggedIn && saveAddress,
+      pointsToRedeem: redeemPoints,
     });
     if (!res.ok) {
       setError(res.error);
@@ -378,9 +391,36 @@ export default function CheckoutForm({
             {couponMsg && <p className="mt-2 text-xs text-ink-muted">{couponMsg}</p>}
           </div>
 
+          {loggedIn && pointsBalance >= 100 && (
+            <div className="mt-5 border-t border-line pt-5">
+              <label className="label">Loyalty Points</label>
+              <p className="text-xs text-ink-muted">
+                Balance: {pointsBalance.toLocaleString()} · 100 pts = $5 off
+              </p>
+              {maxBlocks > 0 ? (
+                <select
+                  className="input mt-2"
+                  value={effectiveBlocks}
+                  onChange={(e) => setRedeemBlocks(Number(e.target.value))}
+                >
+                  {Array.from({ length: maxBlocks + 1 }).map((_, n) => (
+                    <option key={n} value={n}>
+                      {n === 0 ? "Don't use points" : `Redeem ${n * 100} pts (−${formatPrice(n * 5)})`}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="mt-1 text-xs text-ink-muted">
+                  Add more to your cart to redeem points.
+                </p>
+              )}
+            </div>
+          )}
+
           <dl className="mt-5 space-y-3 border-t border-line pt-5 text-sm">
             <Row label="Subtotal" value={formatPrice(subtotal)} />
-            {discount > 0 && <Row label={`Discount (${coupon?.code})`} value={`−${formatPrice(discount)}`} />}
+            {couponDiscount > 0 && <Row label={`Discount (${coupon?.code})`} value={`−${formatPrice(couponDiscount)}`} />}
+            {pointsDiscount > 0 && <Row label={`Points (${redeemPoints})`} value={`−${formatPrice(pointsDiscount)}`} />}
             <Row label="Shipping" value={shipCost === 0 ? "Free" : formatPrice(shipCost)} />
             <Row label="Tax" value={formatPrice(tax)} />
           </dl>

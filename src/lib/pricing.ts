@@ -72,6 +72,27 @@ export function freeShippingProgress(subtotal: number): number {
   return Math.min(1, Math.max(0, subtotal / FREE_SHIPPING_THRESHOLD));
 }
 
+// Volume/bulk pricing: percent off the unit price by quantity of a single line item.
+// Highest qualifying break wins. Applied identically in the client cart and server order math.
+export const QUANTITY_BREAKS = [
+  { min: 3, percent: 10 },
+  { min: 2, percent: 5 },
+] as const;
+
+/** Percentage off for a given line quantity (0 when no break applies). */
+export function quantityBreakPercent(quantity: number): number {
+  for (const b of QUANTITY_BREAKS) {
+    if (quantity >= b.min) return b.percent;
+  }
+  return 0;
+}
+
+/** Unit price after applying the volume break for the given quantity. */
+export function unitPriceForQty(basePrice: number, quantity: number): number {
+  const pct = quantityBreakPercent(quantity);
+  return round2(basePrice * (1 - pct / 100));
+}
+
 export function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }

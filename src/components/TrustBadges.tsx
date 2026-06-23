@@ -21,8 +21,8 @@ const BADGES = [
   },
   {
     Icon: IconGuarantee,
-    title: "Satisfaction guarantee",
-    detail: "Backed by our return policy.",
+    title: "30-day money-back",
+    detail: "30-day money-back guarantee — see our return policy.",
     href: "/refund-policy",
   },
 ];

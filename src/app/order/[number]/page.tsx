@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { formatPrice, formatDateTime } from "@/lib/format";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
+import ReorderButton from "@/components/ReorderButton";
 import PurchaseTracking from "./PurchaseTracking";
 import { requestReturn } from "./actions";
 
@@ -122,8 +123,14 @@ export default async function OrderPage({
           </h3>
           <dl className="space-y-2 text-sm">
             <Row label="Subtotal" value={formatPrice(order.subtotal)} />
-            {order.discount > 0 && (
-              <Row label={`Discount${order.couponCode ? ` (${order.couponCode})` : ""}`} value={`−${formatPrice(order.discount)}`} />
+            {order.discount - (order.pointsRedeemed / 100) * 5 > 0.005 && (
+              <Row
+                label={`Discount${order.couponCode ? ` (${order.couponCode})` : ""}`}
+                value={`−${formatPrice(order.discount - (order.pointsRedeemed / 100) * 5)}`}
+              />
+            )}
+            {order.pointsRedeemed > 0 && (
+              <Row label={`Points redeemed (${order.pointsRedeemed})`} value={`−${formatPrice((order.pointsRedeemed / 100) * 5)}`} />
             )}
             <Row label="Shipping" value={order.shipping === 0 ? "Free" : formatPrice(order.shipping)} />
             <Row label="Tax" value={formatPrice(order.tax)} />
@@ -166,10 +173,11 @@ export default async function OrderPage({
         </div>
       )}
 
-      <div className="mt-10 flex gap-3">
+      <div className="mt-10 flex flex-wrap items-center gap-3">
         <Link href="/shop" className="btn-outline">
           Continue Shopping
         </Link>
+        {isOwner && <ReorderButton orderId={order.id} />}
         {session && (
           <Link href="/account" className="btn-ghost">
             View All Orders

@@ -26,11 +26,31 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "How long does shipping take and can I track it?",
-    a: "Orders typically ship within 1–2 business days. You'll get a tracking number by email, and you can follow real-time status under My Account → Track Shipments.",
+    a: "Orders ship within 1 business day. Domestic shipping is free on orders over $75. You'll get a tracking number by email, and you can follow real-time status under My Account → Track Shipments.",
   },
   {
     q: "What is your return policy?",
-    a: "Unopened items in original condition may be returned within the window described in our Refund & Return Policy. Opened items are non-returnable for safety reasons.",
+    a: "We stand behind every order with a 30-day money-back guarantee. Unopened items in original condition may be returned within 30 days of delivery; opened or reconstituted items are non-returnable for safety reasons. See our Refund & Return Policy for full details.",
+  },
+  {
+    q: "Who is allowed to purchase from Axevia?",
+    a: "Axevia sells only to qualified researchers and institutions (21+) for laboratory and in-vitro research use. By placing an order you confirm you meet these criteria and accept our Research-Use Policy.",
+  },
+  {
+    q: "Do you offer volume or bulk discounts?",
+    a: "Yes — buy 2 of a product to save 5%, or 3 or more to save 10%. The discount is applied automatically per product in your cart and at checkout.",
+  },
+  {
+    q: "How do loyalty points work?",
+    a: "You earn 1 point for every $1 of merchandise on completed orders. Redeem 100 points for $5 off at checkout. Your balance is shown in My Account.",
+  },
+  {
+    q: "Can I change or cancel an order?",
+    a: "Contact us as soon as possible at support@axevia.co. We can usually adjust or cancel an order before it ships.",
+  },
+  {
+    q: "Who can leave a product review?",
+    a: "Only customers who have purchased a product can review it, so every review on the site comes from a verified buyer.",
   },
   {
     q: "Do you offer institutional or tax-exempt purchasing?",

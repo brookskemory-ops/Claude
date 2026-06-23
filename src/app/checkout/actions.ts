@@ -75,6 +75,7 @@ const submitSchema = z.object({
   couponCode: z.string().optional().default(""),
   ruoAcknowledged: z.boolean(),
   saveAddress: z.boolean().optional().default(false),
+  pointsToRedeem: z.coerce.number().int().min(0).optional().default(0),
 });
 
 export type SubmitResult =

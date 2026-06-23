@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
-import { FREE_SHIPPING_THRESHOLD, freeShippingProgress } from "@/lib/pricing";
+import {
+  FREE_SHIPPING_THRESHOLD,
+  freeShippingProgress,
+  unitPriceForQty,
+  quantityBreakPercent,
+} from "@/lib/pricing";
 import ProductImage from "@/components/ProductImage";
 
 export default function CartDrawer({
@@ -79,7 +84,12 @@ export default function CartDrawer({
                           Remove
                         </button>
                       </div>
-                      <p className="mt-1 text-xs text-ink-muted">{formatPrice(item.unitPrice)}</p>
+                      <p className="mt-1 text-xs text-ink-muted">
+                        {formatPrice(unitPriceForQty(item.unitPrice, item.quantity))}
+                        {quantityBreakPercent(item.quantity) > 0 && (
+                          <span className="ml-1 text-ink">(−{quantityBreakPercent(item.quantity)}%)</span>
+                        )}
+                      </p>
                       <div className="mt-auto flex items-center gap-2 pt-2">
                         <QtyButton onClick={() => updateQuantity(item.variantId, item.quantity - 1)} label="−" />
                         <span className="w-8 text-center text-sm">{item.quantity}</span>

@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth";
 import { formatPrice, formatDate } from "@/lib/format";
 import { logout } from "./actions";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
+import ReorderButton from "@/components/ReorderButton";
 import AddressManager from "./AddressManager";
 import ChangePassword from "./ChangePassword";
 import ExemptionUpload from "./ExemptionUpload";
@@ -97,6 +98,9 @@ export default async function AccountPage() {
                   <p className="mt-3 text-xs text-ink-muted">
                     {order.items.map((i) => `${i.name} ×${i.quantity}`).join(", ")}
                   </p>
+                  <div className="mt-3">
+                    <ReorderButton orderId={order.id} />
+                  </div>
                 </li>
               ))}
             </ul>
@@ -105,6 +109,19 @@ export default async function AccountPage() {
 
         {/* Sidebar */}
         <aside className="space-y-10">
+          <div>
+            <h2 className="mb-4 text-sm font-semibold uppercase tracking-[0.18em]">
+              Loyalty Points
+            </h2>
+            <div className="border border-line p-5">
+              <p className="text-2xl font-bold">{user.points.toLocaleString()}</p>
+              <p className="mt-1 text-xs text-ink-muted">
+                Earn 1 point per $1 spent. Redeem 100 points for $5 off at checkout
+                {user.points >= 100 ? ` — up to $${Math.floor(user.points / 100) * 5} available.` : "."}
+              </p>
+            </div>
+          </div>
+
           <AddressManager addresses={addresses} />
 
           <div>
