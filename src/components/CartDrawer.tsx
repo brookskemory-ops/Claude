@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
-import { FREE_SHIPPING_THRESHOLD } from "@/lib/pricing";
+import { FREE_SHIPPING_THRESHOLD, freeShippingProgress } from "@/lib/pricing";
 import ProductImage from "@/components/ProductImage";
 
 export default function CartDrawer({
@@ -15,6 +15,7 @@ export default function CartDrawer({
 }) {
   const { items, subtotal, updateQuantity, removeItem } = useCart();
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+  const progress = freeShippingProgress(subtotal);
 
   return (
     <div className={`fixed inset-0 z-50 ${open ? "" : "pointer-events-none"}`} aria-hidden={!open}>
@@ -47,15 +48,19 @@ export default function CartDrawer({
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              {remaining > 0 ? (
-                <p className="mb-4 bg-paper-muted px-3 py-2 text-center text-xs text-ink-muted">
-                  Add {formatPrice(remaining)} more for free shipping.
+              <div className="mb-4">
+                <p className={`px-3 py-2 text-center text-xs ${remaining > 0 ? "bg-paper-muted text-ink-muted" : "bg-ink text-paper"}`}>
+                  {remaining > 0
+                    ? `Add ${formatPrice(remaining)} more for free shipping.`
+                    : "You've unlocked free shipping."}
                 </p>
-              ) : (
-                <p className="mb-4 bg-ink px-3 py-2 text-center text-xs text-paper">
-                  You&apos;ve unlocked free shipping.
-                </p>
-              )}
+                <div className="mt-2 h-1 w-full bg-line">
+                  <div
+                    className="h-1 bg-ink transition-all duration-300"
+                    style={{ width: `${Math.round(progress * 100)}%` }}
+                  />
+                </div>
+              </div>
               <ul className="divide-y divide-line">
                 {items.map((item) => (
                   <li key={item.variantId} className="flex gap-4 py-4">

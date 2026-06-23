@@ -128,3 +128,12 @@ export function IconShipping({ className = iconBase }: { className?: string }) {
     </svg>
   );
 }
+
+export function IconGuarantee({ className = iconBase }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+      <path d="M12 2.5 4.5 5.5v6c0 4.5 3.2 8 7.5 9.5 4.3-1.5 7.5-5 7.5-9.5v-6L12 2.5Z" />
+      <path d="M8.5 12l2.4 2.4 4.6-4.8" className="stroke-accent" strokeWidth="1.8" />
+    </svg>
+  );
+}

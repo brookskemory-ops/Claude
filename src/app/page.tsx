@@ -2,12 +2,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
 import { LogoMonogram } from "@/components/Logo";
-import {
-  IconPurity,
-  IconTested,
-  IconCOA,
-  IconShipping,
-} from "@/components/graphics";
+import TrustBadges from "@/components/TrustBadges";
 
 export default async function HomePage() {
   const featured = await db.product.findMany({
@@ -56,21 +51,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Benefits */}
+      {/* Trust / shipping strip */}
       <section className="border-b border-line">
-        <div className="container-site grid gap-px bg-line sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { Icon: IconPurity, t: "≥99% Purity", d: "High-purity compounds, verified per lot." },
-            { Icon: IconTested, t: "Third-Party Tested", d: "HPLC and mass-spec analysis." },
-            { Icon: IconCOA, t: "COA Included", d: "Certificate of Analysis for every batch." },
-            { Icon: IconShipping, t: "Cold-Chain Shipping", d: "Lyophilized and shipped to spec." },
-          ].map((b) => (
-            <div key={b.t} className="bg-paper px-6 py-10 text-center">
-              <b.Icon className="mx-auto mb-4 h-8 w-8 text-ink" />
-              <h3 className="text-sm font-semibold uppercase tracking-[0.14em]">{b.t}</h3>
-              <p className="mt-2 text-sm text-ink-muted">{b.d}</p>
-            </div>
-          ))}
+        <div className="container-site py-px">
+          <TrustBadges />
         </div>
       </section>
 

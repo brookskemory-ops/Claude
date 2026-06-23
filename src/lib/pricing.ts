@@ -61,6 +61,17 @@ export function shippingFor(subtotalAfterDiscount: number): number {
   return subtotalAfterDiscount >= FREE_SHIPPING_THRESHOLD ? 0 : FLAT_SHIPPING;
 }
 
+/** How much more a customer must spend to reach free shipping (0 once reached). */
+export function amountToFreeShipping(subtotal: number): number {
+  return Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+}
+
+/** Progress toward free shipping as a 0–1 fraction (capped at 1). */
+export function freeShippingProgress(subtotal: number): number {
+  if (FREE_SHIPPING_THRESHOLD <= 0) return 1;
+  return Math.min(1, Math.max(0, subtotal / FREE_SHIPPING_THRESHOLD));
+}
+
 export function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }

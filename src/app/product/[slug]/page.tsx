@@ -3,13 +3,15 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatPrice } from "@/lib/format";
 import ProductImage from "@/components/ProductImage";
 import ProductCard from "@/components/ProductCard";
 import ProductPurchase, { type PurchaseVariant } from "@/components/ProductPurchase";
 import Stars from "@/components/Stars";
+import TrustBadges from "@/components/TrustBadges";
+import { IconCOA } from "@/components/graphics";
 import ProductReviewForm from "./ProductReviewForm";
-import { minEffectivePrice, totalStock } from "@/lib/pricing";
+import { minEffectivePrice, totalStock, FREE_SHIPPING_THRESHOLD } from "@/lib/pricing";
 
 export async function generateMetadata({
   params,
@@ -143,6 +145,33 @@ export default async function ProductPage({
             />
           </div>
 
+          <p className="mt-4 text-xs text-ink-muted">
+            Free shipping over {formatPrice(FREE_SHIPPING_THRESHOLD)} · Ships within 1 business day
+          </p>
+
+          {/* COA — front and center */}
+          <div className="mt-5 flex items-start gap-3 border border-ink p-4">
+            <IconCOA className="mt-0.5 h-6 w-6 shrink-0 text-ink" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold">Certificate of Analysis</p>
+              <p className="mt-1 text-xs text-ink-muted">
+                Lot-matched HPLC purity and mass-spec identity from an independent laboratory.
+              </p>
+              {product.coaUrl ? (
+                <a
+                  href={product.coaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-outline btn-sm mt-3"
+                >
+                  View Certificate of Analysis
+                </a>
+              ) : (
+                <p className="mt-3 text-xs text-ink-muted">Available on request for this lot.</p>
+              )}
+            </div>
+          </div>
+
           <div className="mt-8 border border-ink bg-paper-muted p-4 text-xs leading-relaxed">
             <p className="font-semibold uppercase tracking-[0.14em]">Research Use Only</p>
             <p className="mt-1 text-ink-muted">
@@ -168,19 +197,11 @@ export default async function ProductPage({
             </dl>
           )}
 
-          <div className="mt-6">
-            {product.coaUrl ? (
-              <a href={product.coaUrl} target="_blank" rel="noopener noreferrer" className="btn-outline btn-sm">
-                Download Certificate of Analysis
-              </a>
-            ) : (
-              <span className="text-xs text-ink-muted">
-                Certificate of Analysis available on request.
-              </span>
-            )}
-          </div>
+          <TrustBadges variant="inline" className="mt-8 border-t border-line pt-6" />
         </div>
       </div>
+
+      <TrustBadges className="mt-16" />
 
       {/* Reviews */}
       <section id="reviews" className="mt-24 border-t border-line pt-12">

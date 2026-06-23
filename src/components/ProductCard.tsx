@@ -57,6 +57,11 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
           {product.form}
           {variants.length > 1 ? ` · ${variants.length} sizes` : ""}
         </p>
+        {product.coaUrl && (
+          <p className="mt-1.5 inline-flex w-fit items-center gap-1 border border-line px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+            COA included
+          </p>
+        )}
         {reviews.length > 0 && (
           <div className="mt-2 flex items-center gap-1.5">
             <Stars rating={avgRating} size={12} />
