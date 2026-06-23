@@ -8,6 +8,7 @@ import { requireAdmin } from "@/lib/auth";
 import { CATEGORIES, ORDER_STATUSES } from "@/lib/types";
 import { buyCheapestLabel } from "@/lib/shipping";
 import { markOrderShipped, refundOrder, cancelOrder } from "@/lib/orders";
+import { processBackInStock } from "@/lib/stock";
 import { logAudit } from "@/lib/audit";
 
 function revalidateOrder(id: string) {
@@ -176,6 +177,7 @@ export async function updateProduct(id: string, _prev: FormResult | null, formDa
     });
   }
 
+  await processBackInStock();
   revalidatePath("/admin/products");
   revalidatePath("/admin/inventory");
   revalidatePath("/shop");
@@ -197,6 +199,7 @@ export async function updateStock(formData: FormData) {
   const variantId = String(formData.get("variantId"));
   const stock = Math.max(0, Math.floor(Number(formData.get("stock")) || 0));
   await db.productVariant.update({ where: { id: variantId }, data: { stock } });
+  await processBackInStock();
   revalidatePath("/admin/inventory");
   revalidatePath("/shop");
 }

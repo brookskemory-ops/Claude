@@ -152,6 +152,24 @@ export async function sendContactMessage(args: {
   });
 }
 
+export async function sendBackInStock(args: {
+  to: string;
+  productName: string;
+  variantLabel: string;
+  slug: string;
+  siteUrl: string;
+}): Promise<void> {
+  const body = `
+    <p><strong>${args.productName} (${args.variantLabel})</strong> is back in stock.</p>
+    <p><a href="${args.siteUrl}/product/${args.slug}" style="display:inline-block;background:#0a0a0a;color:#fff;padding:12px 20px;text-decoration:none;text-transform:uppercase;font-size:12px;letter-spacing:.14em">View Product</a></p>
+    <p style="font-size:13px;color:#737373">Research Use Only — not for human or veterinary use.</p>`;
+  await sendEmail({
+    to: args.to,
+    subject: `Back in stock: ${args.productName}`,
+    html: layout("Back in stock", body),
+  });
+}
+
 export async function sendVerification(args: {
   to: string;
   verifyUrl: string;

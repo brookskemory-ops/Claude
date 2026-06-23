@@ -107,7 +107,19 @@ model ProductVariant {
   active            Boolean     @default(true)
   sortOrder         Int         @default(0)
   orderItems        OrderItem[]
+  stockNotifications StockNotification[]
   createdAt         DateTime    @default(now())
+}
+
+model StockNotification {
+  id        String         @id @default(cuid())
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  email     String
+  notified  Boolean        @default(false)
+  createdAt DateTime       @default(now())
+
+  @@unique([variantId, email])
 }
 
 model Coupon {

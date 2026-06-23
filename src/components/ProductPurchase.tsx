@@ -5,6 +5,7 @@ import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
 import { effectivePrice, isOnSale, discountPercent } from "@/lib/pricing";
 import { track } from "@/lib/gtag";
+import { requestStockNotification } from "@/app/product/[slug]/stockActions";
 
 export type PurchaseVariant = {
   id: string;
@@ -115,33 +116,81 @@ export default function ProductPurchase({
         )}
       </div>
 
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="flex items-center border border-line">
-          <button
-            onClick={() => setQty((q) => Math.max(1, q - 1))}
-            className="flex h-12 w-12 items-center justify-center hover:bg-paper-muted"
-            aria-label="Decrease quantity"
-          >
-            −
-          </button>
-          <span className="w-10 text-center text-sm">{qty}</span>
-          <button
-            onClick={() => setQty((q) => Math.min(selected.stock, q + 1))}
-            disabled={outOfStock}
-            className="flex h-12 w-12 items-center justify-center hover:bg-paper-muted disabled:opacity-30"
-            aria-label="Increase quantity"
-          >
-            +
+      {outOfStock ? (
+        <BackInStockForm key={selected.id} variantId={selected.id} />
+      ) : (
+        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex items-center border border-line">
+            <button
+              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              className="flex h-12 w-12 items-center justify-center hover:bg-paper-muted"
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <span className="w-10 text-center text-sm">{qty}</span>
+            <button
+              onClick={() => setQty((q) => Math.min(selected.stock, q + 1))}
+              className="flex h-12 w-12 items-center justify-center hover:bg-paper-muted disabled:opacity-30"
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+          <button onClick={handleAdd} className="btn-primary flex-1">
+            {added ? "Added ✓" : "Add to Cart"}
           </button>
         </div>
-        <button
-          onClick={handleAdd}
-          disabled={outOfStock}
-          className="btn-primary flex-1"
-        >
-          {outOfStock ? "Out of Stock" : added ? "Added ✓" : "Add to Cart"}
+      )}
+    </div>
+  );
+}
+
+function BackInStockForm({ variantId }: { variantId: string }) {
+  const [email, setEmail] = useState("");
+  const [state, setState] = useState<"idle" | "saving" | "done" | "error">("idle");
+  const [error, setError] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setState("saving");
+    setError("");
+    const res = await requestStockNotification(variantId, email);
+    if (res.ok) {
+      setState("done");
+    } else {
+      setError(res.error);
+      setState("error");
+    }
+  }
+
+  if (state === "done") {
+    return (
+      <p className="mt-6 border border-line bg-paper-soft px-4 py-3 text-sm text-ink-muted">
+        Thanks — we&apos;ll email you when this size is back in stock.
+      </p>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-6">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+        Notify me when back in stock
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@institution.edu"
+          className="flex-1 border border-line bg-paper px-3 py-2 text-sm focus:border-ink focus:outline-none"
+        />
+        <button type="submit" disabled={state === "saving"} className="btn-outline">
+          {state === "saving" ? "Saving…" : "Notify Me"}
         </button>
       </div>
-    </div>
+      {state === "error" && <p className="mt-2 text-sm text-ink">{error}</p>}
+    </form>
   );
 }

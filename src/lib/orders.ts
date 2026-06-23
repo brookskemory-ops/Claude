@@ -21,6 +21,7 @@ import {
   sendReferralReward,
 } from "@/lib/email";
 import { createUniqueCoupon, REFERRER_AMOUNT_OFF } from "@/lib/referral";
+import { processBackInStock } from "@/lib/stock";
 import { formatPrice } from "@/lib/format";
 import { stripe } from "@/lib/stripe";
 import { paypalRefund } from "@/lib/paypal";
@@ -330,6 +331,7 @@ async function restockOrder(orderId: string) {
         }),
       ),
   );
+  await processBackInStock();
 }
 
 /** Refunds an order via its payment provider, restocks, and marks it REFUNDED. */
