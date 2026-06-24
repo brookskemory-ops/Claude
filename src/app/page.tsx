@@ -105,10 +105,15 @@ export default async function HomePage() {
               <Link
                 key={cat}
                 href={`/shop?category=${encodeURIComponent(cat)}`}
-                className="group flex items-center justify-between bg-paper px-6 py-8 transition-colors hover:bg-ink hover:text-paper"
+                aria-label={cat}
+                className="group flex aspect-square items-center justify-center bg-paper p-4 transition-colors hover:bg-paper-muted"
               >
-                <span className="text-sm font-semibold uppercase tracking-[0.14em]">{cat}</span>
-                <span className="text-ink-muted transition-colors group-hover:text-paper">→</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/graphics/categories/${cat.toLowerCase().replace(/\s+/g, "-")}.png`}
+                  alt={cat}
+                  className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+                />
               </Link>
             ))}
           </div>
