@@ -2,10 +2,23 @@ import "server-only";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-// Storage abstraction. Uses Vercel Blob in production (when BLOB_READ_WRITE_TOKEN is set),
-// and the local filesystem (public/uploads) in development. Swapping providers is a config
-// change, not a code change.
-export const usingBlob = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+// Storage abstraction. Uses Vercel Blob in production, and the local filesystem
+// (public/uploads) in development. Swapping providers is a config change, not code.
+
+/**
+ * Resolves the Vercel Blob read-write token. Prefers the standard env var, but falls back to
+ * any env var whose value looks like a read-write token (Vercel may prefix the variable name
+ * with a store-specific prefix, e.g. MYSTORE_BLOB_READ_WRITE_TOKEN).
+ */
+function blobToken(): string | undefined {
+  if (process.env.BLOB_READ_WRITE_TOKEN) return process.env.BLOB_READ_WRITE_TOKEN;
+  for (const value of Object.values(process.env)) {
+    if (typeof value === "string" && value.startsWith("vercel_blob_rw_")) return value;
+  }
+  return undefined;
+}
+
+export const usingBlob = Boolean(blobToken());
 
 export async function saveFile(
   bytes: Buffer,
@@ -14,11 +27,13 @@ export async function saveFile(
 ): Promise<string> {
   const safe = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
 
-  if (usingBlob) {
+  const token = blobToken();
+  if (token) {
     const { put } = await import("@vercel/blob");
     const blob = await put(`coa/${safe}`, bytes, {
       access: "public",
       contentType,
+      token,
     });
     return blob.url;
   }
@@ -28,7 +43,7 @@ export async function saveFile(
   // that will 404 when served.
   if (process.env.VERCEL) {
     throw new Error(
-      "File storage is not configured. Enable Vercel Blob for this project so BLOB_READ_WRITE_TOKEN is set.",
+      "File storage is not configured. Connect a Vercel Blob store to this project, then redeploy.",
     );
   }
 
