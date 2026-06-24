@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
-import { LogoMonogram } from "@/components/Logo";
 import TrustBadges from "@/components/TrustBadges";
 import { CATEGORIES } from "@/lib/types";
 
@@ -19,8 +18,16 @@ export default async function HomePage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-ink text-paper">
-        <div className="container-site grid items-center gap-12 py-16 lg:grid-cols-2 lg:py-28">
+      <section className="relative overflow-hidden bg-ink text-paper">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/graphics/hero-molecule.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/85 to-ink/30" />
+        <div className="container-site relative grid items-center gap-12 py-16 lg:grid-cols-2 lg:py-28">
           <div className="animate-fade-up">
             <p className="eyebrow text-paper/60">Research Grade Peptides</p>
             <h1 className="mt-5 text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
@@ -45,8 +52,13 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="flex justify-center">
-            <div className="flex aspect-square w-full max-w-sm items-center justify-center border border-paper/20 lg:max-w-md">
-              <LogoMonogram size={160} invert />
+            <div className="w-full max-w-md overflow-hidden border border-paper/20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/graphics/vials.png"
+                alt="Axevia research peptide vials"
+                className="aspect-[16/10] w-full object-cover"
+              />
             </div>
           </div>
         </div>
