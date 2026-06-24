@@ -79,15 +79,26 @@ export default function CartDrawer({
                             {item.name}
                           </Link>
                           <p className="text-xs text-ink-muted">{item.variantLabel}</p>
+                          {item.bundleName && (
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                              {item.bundleName} bundle
+                            </p>
+                          )}
                         </div>
                         <button onClick={() => removeItem(item.variantId)} className="text-xs text-ink-muted hover:text-ink">
                           Remove
                         </button>
                       </div>
                       <p className="mt-1 text-xs text-ink-muted">
-                        {formatPrice(unitPriceForQty(item.unitPrice, item.quantity))}
-                        {quantityBreakPercent(item.quantity) > 0 && (
-                          <span className="ml-1 text-ink">(−{quantityBreakPercent(item.quantity)}%)</span>
+                        {item.bundleId ? (
+                          formatPrice(item.unitPrice)
+                        ) : (
+                          <>
+                            {formatPrice(unitPriceForQty(item.unitPrice, item.quantity))}
+                            {quantityBreakPercent(item.quantity) > 0 && (
+                              <span className="ml-1 text-ink">(−{quantityBreakPercent(item.quantity)}%)</span>
+                            )}
+                          </>
                         )}
                       </p>
                       <div className="mt-auto flex items-center gap-2 pt-2">

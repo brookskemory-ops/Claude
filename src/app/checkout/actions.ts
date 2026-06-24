@@ -68,7 +68,13 @@ const addressSchema = z.object({
 const submitSchema = z.object({
   email: z.string().email("Valid email required"),
   items: z
-    .array(z.object({ variantId: z.string(), quantity: z.number().int().positive() }))
+    .array(
+      z.object({
+        variantId: z.string(),
+        quantity: z.number().int().positive(),
+        bundleId: z.string().optional(),
+      }),
+    )
     .min(1, "Cart is empty"),
   shipping: addressSchema,
   billing: addressSchema,

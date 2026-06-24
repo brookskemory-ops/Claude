@@ -51,15 +51,27 @@ export default function CartPage() {
                         {item.name}
                       </Link>
                       <p className="text-sm text-ink-muted">{item.variantLabel} · SKU {item.sku}</p>
+                      {item.bundleName && (
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                          {item.bundleName} bundle
+                        </p>
+                      )}
                     </div>
                     <span className="font-semibold">
-                      {formatPrice(unitPriceForQty(item.unitPrice, item.quantity) * item.quantity)}
+                      {formatPrice(
+                        (item.bundleId ? item.unitPrice : unitPriceForQty(item.unitPrice, item.quantity)) *
+                          item.quantity,
+                      )}
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-ink-muted">
-                    {formatPrice(unitPriceForQty(item.unitPrice, item.quantity))} each
-                    {quantityBreakPercent(item.quantity) > 0 && (
-                      <span className="ml-1 text-ink">· saved {quantityBreakPercent(item.quantity)}%</span>
+                    {formatPrice(item.bundleId ? item.unitPrice : unitPriceForQty(item.unitPrice, item.quantity))} each
+                    {item.bundleId ? (
+                      <span className="ml-1 text-ink">· bundle price</span>
+                    ) : (
+                      quantityBreakPercent(item.quantity) > 0 && (
+                        <span className="ml-1 text-ink">· saved {quantityBreakPercent(item.quantity)}%</span>
+                      )
                     )}
                   </p>
                   <div className="mt-auto flex items-center justify-between pt-4">

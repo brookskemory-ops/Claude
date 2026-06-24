@@ -3,9 +3,19 @@
 import { useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/format";
-import { effectivePrice, isOnSale, discountPercent } from "@/lib/pricing";
+import {
+  effectivePrice,
+  isOnSale,
+  discountPercent,
+  unitPriceForQty,
+  quantityBreakPercent,
+  QUANTITY_BREAKS,
+} from "@/lib/pricing";
 import { track } from "@/lib/gtag";
 import { requestStockNotification } from "@/app/product/[slug]/stockActions";
+
+// Quantity tiers to display: 1 (full price) plus each configured break, ascending.
+const TIERS = [{ min: 1, percent: 0 }, ...[...QUANTITY_BREAKS].sort((a, b) => a.min - b.min)];
 
 export type PurchaseVariant = {
   id: string;
@@ -37,11 +47,14 @@ export default function ProductPurchase({
   const selected = variants.find((v) => v.id === selectedId) ?? variants[0];
   if (!selected) return null;
 
-  const price = effectivePrice(selected);
+  const basePrice = effectivePrice(selected);
+  const unitPrice = unitPriceForQty(basePrice, qty);
+  const breakPct = quantityBreakPercent(qty);
   const onSale = isOnSale(selected);
   const off = discountPercent(selected);
   const outOfStock = selected.stock <= 0;
   const lowStock = !outOfStock && selected.stock <= 10;
+  const activeTierMin = [...TIERS].reverse().find((t) => qty >= t.min)?.min ?? 1;
 
   function handleAdd() {
     if (outOfStock) return;
@@ -53,14 +66,14 @@ export default function ProductPurchase({
         variantLabel: selected.label,
         sku: selected.sku,
         imageKey,
-        unitPrice: price,
+        unitPrice: basePrice,
         maxStock: selected.stock,
       },
       qty,
     );
     track("add_to_cart", {
       currency: "USD",
-      value: price * qty,
+      value: unitPrice * qty,
       items: [{ item_id: selected.sku, item_name: `${name} ${selected.label}`, quantity: qty }],
     });
     setAdded(true);
@@ -69,15 +82,26 @@ export default function ProductPurchase({
 
   return (
     <div>
-      <div className="mb-6 flex items-baseline gap-3">
-        <span className="text-3xl font-semibold">{formatPrice(price)}</span>
+      <div className="mb-1 flex items-baseline gap-3">
+        <span className="text-3xl font-semibold">{formatPrice(unitPrice)}</span>
         {onSale && (
           <span className="text-base text-ink-muted line-through">
             {formatPrice(selected.price)}
           </span>
         )}
         {off != null && <span className="badge-accent">{off}% Off</span>}
+        {breakPct > 0 && <span className="badge bg-ink text-paper">−{breakPct}% volume</span>}
       </div>
+      <p className="mb-6 text-sm text-ink-muted">
+        {qty > 1 ? (
+          <>
+            {qty} × {formatPrice(unitPrice)} ={" "}
+            <span className="font-semibold text-ink">{formatPrice(unitPrice * qty)}</span>
+          </>
+        ) : (
+          "per vial"
+        )}
+      </p>
 
       <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
         Size
@@ -115,6 +139,44 @@ export default function ProductPurchase({
           <span className="text-ink-muted">In stock · SKU {selected.sku}</span>
         )}
       </div>
+
+      {!outOfStock && TIERS.length > 1 && (
+        <div className="mt-6">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+            Buy more, save more
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {TIERS.map((t, i) => {
+              const isLast = i === TIERS.length - 1;
+              const label = t.min === 1 ? "1 vial" : isLast ? `${t.min}+ vials` : `${t.min} vials`;
+              const unit = unitPriceForQty(basePrice, t.min);
+              const active = activeTierMin === t.min;
+              return (
+                <button
+                  key={t.min}
+                  onClick={() => setQty(t.min)}
+                  className={`flex flex-col items-start border p-3 text-left transition-colors ${
+                    active ? "border-ink bg-ink text-paper" : "border-line hover:border-ink"
+                  }`}
+                >
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em]">{label}</span>
+                  <span className="mt-1 text-sm font-semibold">
+                    {formatPrice(unit)}{" "}
+                    <span className={`text-xs font-normal ${active ? "text-paper/70" : "text-ink-muted"}`}>
+                      each
+                    </span>
+                  </span>
+                  <span
+                    className={`mt-0.5 text-[11px] ${active ? "text-paper/70" : "text-ink-muted"}`}
+                  >
+                    {t.percent > 0 ? `save ${t.percent}%` : " "}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {outOfStock ? (
         <BackInStockForm key={selected.id} variantId={selected.id} />

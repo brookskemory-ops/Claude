@@ -8,6 +8,10 @@ export type CartItem = {
   unitPrice: number;
   quantity: number;
   maxStock: number;
+  // Set when this line was added as part of a bundle. unitPrice is the bundle-discounted
+  // per-unit price and the volume break is not applied on top of it.
+  bundleId?: string;
+  bundleName?: string;
 };
 
 export type SessionPayload = {

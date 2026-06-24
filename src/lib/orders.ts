@@ -36,7 +36,7 @@ async function adminEmail(): Promise<string | null> {
   return admin?.email ?? null;
 }
 
-export type CheckoutItemInput = { variantId: string; quantity: number };
+export type CheckoutItemInput = { variantId: string; quantity: number; bundleId?: string };
 
 export type AddressInput = {
   recipient: string;
@@ -88,6 +88,15 @@ export async function createPendingOrder(
   });
   const byId = new Map(variants.map((v) => [v.id, v]));
 
+  // Load any bundles referenced by the cart so we can validate + apply their discount.
+  const bundleIds = Array.from(
+    new Set(input.items.map((i) => i.bundleId).filter(Boolean) as string[]),
+  );
+  const bundles = bundleIds.length
+    ? await db.bundle.findMany({ where: { id: { in: bundleIds } }, include: { items: true } })
+    : [];
+  const bundleById = new Map(bundles.map((b) => [b.id, b]));
+
   const lineItems: { variant: (typeof variants)[number]; unitPrice: number; quantity: number }[] = [];
   let subtotal = 0;
   for (const item of input.items) {
@@ -98,7 +107,18 @@ export async function createPendingOrder(
     if (variant.stock < item.quantity) {
       return { ok: false, error: `${variant.product.name} (${variant.label}) is out of stock.` };
     }
-    const unitPrice = unitPriceForQty(effectivePrice(variant), item.quantity);
+    let unitPrice: number;
+    if (item.bundleId) {
+      const bundle = bundleById.get(item.bundleId);
+      const inBundle = bundle?.active && bundle.items.some((bi) => bi.variantId === variant.id);
+      if (!bundle || !inBundle) {
+        return { ok: false, error: "A bundle in your cart is no longer available." };
+      }
+      // Bundle discount applies to the line; the per-quantity volume break does not stack.
+      unitPrice = round2(effectivePrice(variant) * (1 - bundle.discountPercent / 100));
+    } else {
+      unitPrice = unitPriceForQty(effectivePrice(variant), item.quantity);
+    }
     subtotal = round2(subtotal + unitPrice * item.quantity);
     lineItems.push({ variant, unitPrice, quantity: item.quantity });
   }

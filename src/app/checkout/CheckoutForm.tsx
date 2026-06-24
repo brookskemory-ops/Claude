@@ -167,7 +167,7 @@ export default function CheckoutForm({
     if (orderIdRef.current) return orderIdRef.current;
     const res = await submitOrder({
       email,
-      items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity })),
+      items: items.map((i) => ({ variantId: i.variantId, quantity: i.quantity, bundleId: i.bundleId })),
       shipping,
       billing: billingAddress,
       couponCode: coupon?.code ?? "",

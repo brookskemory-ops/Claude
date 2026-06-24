@@ -12,7 +12,7 @@ import TrustBadges from "@/components/TrustBadges";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import { IconCOA } from "@/components/graphics";
 import ProductReviewForm from "./ProductReviewForm";
-import { minEffectivePrice, totalStock, FREE_SHIPPING_THRESHOLD, QUANTITY_BREAKS } from "@/lib/pricing";
+import { minEffectivePrice, totalStock, FREE_SHIPPING_THRESHOLD } from "@/lib/pricing";
 
 export async function generateMetadata({
   params,
@@ -159,13 +159,6 @@ export default async function ProductPage({
 
           <p className="mt-4 text-xs text-ink-muted">
             Free shipping over {formatPrice(FREE_SHIPPING_THRESHOLD)} · Ships within 1 business day
-          </p>
-          <p className="mt-1 text-xs text-ink-muted">
-            Volume pricing:{" "}
-            {[...QUANTITY_BREAKS]
-              .sort((a, b) => a.min - b.min)
-              .map((b, i, arr) => `buy ${b.min}${i === arr.length - 1 ? "+" : ""} save ${b.percent}%`)
-              .join(" · ")}
           </p>
 
           {/* COA — front and center */}

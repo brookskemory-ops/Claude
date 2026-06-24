@@ -488,3 +488,103 @@ export async function deletePost(id: string): Promise<void> {
   revalidatePath("/admin/blog");
   revalidatePath("/blog");
 }
+
+// ---- Bundles ----
+
+const bundleItemSchema = z.object({
+  variantId: z.string().min(1),
+  quantity: z.coerce.number().int().min(1),
+});
+
+const bundleSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  slug: z.string().optional(),
+  description: z.string().optional().default(""),
+  imageKey: z.string().optional().default("default"),
+  discountPercent: z.coerce.number().int().min(0).max(90).default(10),
+  active: z.boolean().default(true),
+  items: z.array(bundleItemSchema).min(1, "Add at least one product to the bundle"),
+});
+
+function parseBundle(formData: FormData) {
+  let items: unknown = [];
+  try {
+    items = JSON.parse(String(formData.get("items") || "[]"));
+  } catch {
+    items = [];
+  }
+  return bundleSchema.safeParse({
+    name: formData.get("name"),
+    slug: formData.get("slug") || undefined,
+    description: formData.get("description") || "",
+    imageKey: formData.get("imageKey") || "default",
+    discountPercent: formData.get("discountPercent") || 10,
+    active: formData.get("active") === "on",
+    items,
+  });
+}
+
+export async function createBundle(_prev: FormResult | null, formData: FormData): Promise<FormResult> {
+  await requireAdmin();
+  const parsed = parseBundle(formData);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid bundle." };
+  const d = parsed.data;
+  const slug = d.slug && d.slug.length ? slugify(d.slug) : slugify(d.name);
+  if (await db.bundle.findUnique({ where: { slug } })) {
+    return { ok: false, error: "A bundle with that slug already exists." };
+  }
+  await db.bundle.create({
+    data: {
+      slug,
+      name: d.name,
+      description: d.description ?? "",
+      imageKey: d.imageKey || "default",
+      discountPercent: d.discountPercent,
+      active: d.active,
+      items: { create: d.items.map((it) => ({ variantId: it.variantId, quantity: it.quantity })) },
+    },
+  });
+  await logAudit("bundle", `created ${slug}`);
+  revalidatePath("/admin/bundles");
+  revalidatePath("/bundles");
+  redirect("/admin/bundles");
+}
+
+export async function updateBundle(id: string, _prev: FormResult | null, formData: FormData): Promise<FormResult> {
+  await requireAdmin();
+  const parsed = parseBundle(formData);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid bundle." };
+  const d = parsed.data;
+  const slug = d.slug && d.slug.length ? slugify(d.slug) : slugify(d.name);
+  if (await db.bundle.findFirst({ where: { slug, NOT: { id } } })) {
+    return { ok: false, error: "Another bundle already uses that slug." };
+  }
+  await db.bundle.update({
+    where: { id },
+    data: {
+      slug,
+      name: d.name,
+      description: d.description ?? "",
+      imageKey: d.imageKey || "default",
+      discountPercent: d.discountPercent,
+      active: d.active,
+    },
+  });
+  await db.bundleItem.deleteMany({ where: { bundleId: id } });
+  await db.bundleItem.createMany({
+    data: d.items.map((it) => ({ bundleId: id, variantId: it.variantId, quantity: it.quantity })),
+  });
+  await logAudit("bundle", `updated ${slug}`);
+  revalidatePath("/admin/bundles");
+  revalidatePath("/bundles");
+  revalidatePath(`/bundle/${slug}`);
+  redirect("/admin/bundles");
+}
+
+export async function deleteBundle(id: string): Promise<void> {
+  await requireAdmin();
+  await db.bundle.delete({ where: { id } });
+  await logAudit("bundle", `deleted ${id}`);
+  revalidatePath("/admin/bundles");
+  revalidatePath("/bundles");
+}

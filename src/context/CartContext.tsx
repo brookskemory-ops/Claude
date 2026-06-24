@@ -82,7 +82,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<CartContextValue>(() => {
     const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
     const subtotal = items.reduce(
-      (sum, i) => sum + unitPriceForQty(i.unitPrice, i.quantity) * i.quantity,
+      // Bundle lines carry an already-discounted unitPrice; don't apply the volume break again.
+      (sum, i) =>
+        sum + (i.bundleId ? i.unitPrice : unitPriceForQty(i.unitPrice, i.quantity)) * i.quantity,
       0,
     );
     return {

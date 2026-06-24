@@ -75,6 +75,8 @@ export function freeShippingProgress(subtotal: number): number {
 // Volume/bulk pricing: percent off the unit price by quantity of a single line item.
 // Highest qualifying break wins. Applied identically in the client cart and server order math.
 export const QUANTITY_BREAKS = [
+  { min: 10, percent: 20 },
+  { min: 5, percent: 15 },
   { min: 3, percent: 10 },
   { min: 2, percent: 5 },
 ] as const;

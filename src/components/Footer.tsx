@@ -16,6 +16,7 @@ export default function Footer() {
           title="Catalog"
           links={[
             { href: "/shop", label: "All Products" },
+            { href: "/bundles", label: "Bundles" },
             { href: "/shop?category=Regenerative", label: "Regenerative" },
             { href: "/shop?category=Metabolic", label: "Metabolic" },
             { href: "/shop?category=Lab Supplies", label: "Lab Supplies" },
