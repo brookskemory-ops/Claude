@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
   }
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const url = await saveFile(bytes, file.name, file.type || "application/octet-stream");
-  return Response.json({ url });
+  try {
+    const url = await saveFile(bytes, file.name, file.type || "application/octet-stream");
+    return Response.json({ url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Upload failed.";
+    return Response.json({ error: message }, { status: 500 });
+  }
 }

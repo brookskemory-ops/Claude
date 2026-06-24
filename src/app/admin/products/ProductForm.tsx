@@ -62,6 +62,7 @@ export default function ProductForm({
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
   const [imageUploading, setImageUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   async function uploadCoa(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -82,12 +83,16 @@ export default function ProductForm({
     const file = e.target.files?.[0];
     if (!file) return;
     setImageUploading(true);
+    setUploadError("");
     try {
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (data.url) setImageUrl(data.url);
+      else setUploadError(data.error || "Upload failed.");
+    } catch {
+      setUploadError("Upload failed.");
     } finally {
       setImageUploading(false);
     }
@@ -158,6 +163,7 @@ export default function ProductForm({
           <input type="file" accept="image/*" onChange={uploadImage} className="text-xs" />
           {imageUploading && <span className="text-xs text-ink-muted">Uploading…</span>}
         </div>
+        {uploadError && <p className="mt-1 text-xs text-ink">{uploadError}</p>}
         {imageUrl && (
           <div className="mt-2 flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}

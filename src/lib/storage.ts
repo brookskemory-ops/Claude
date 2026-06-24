@@ -23,6 +23,15 @@ export async function saveFile(
     return blob.url;
   }
 
+  // The local-filesystem fallback only works in development. On Vercel the filesystem is
+  // read-only/ephemeral, so fail loudly with an actionable message instead of writing a file
+  // that will 404 when served.
+  if (process.env.VERCEL) {
+    throw new Error(
+      "File storage is not configured. Enable Vercel Blob for this project so BLOB_READ_WRITE_TOKEN is set.",
+    );
+  }
+
   const dir = path.join(process.cwd(), "public", "uploads");
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, safe), bytes);
