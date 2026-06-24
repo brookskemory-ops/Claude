@@ -115,6 +115,26 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Peptide architecture figure */}
+      <section className="border-t border-line">
+        <div className="container-site py-16">
+          <div className="mb-6 max-w-xl">
+            <p className="eyebrow">The Science</p>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight">Built on peptide chemistry</h2>
+            <p className="mt-3 text-ink-muted">
+              From N-terminus to C-terminus, every compound is defined by its sequence — and
+              verified against it by independent analysis.
+            </p>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/graphics/peptide-architecture.png"
+            alt="Figure 01 — peptide architecture: N-terminus, peptide bond, C-terminus"
+            className="w-full border border-line"
+          />
+        </div>
+      </section>
+
       {/* Standard */}
       <section className="bg-paper-soft">
         <div className="container-site grid items-center gap-10 py-20 lg:grid-cols-2">
@@ -132,19 +152,27 @@ export default async function HomePage() {
               Our Process
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-px bg-line">
-            {[
-              { k: "≥99%", v: "Typical purity" },
-              { k: "HPLC / MS", v: "Analytical methods" },
-              { k: "Per-lot", v: "Certificate of Analysis" },
-              { k: "-20°C", v: "Lyophilized storage" },
-            ].map((s) => (
-              <div key={s.v} className="bg-paper-soft p-8">
-                <p className="text-2xl font-bold">{s.k}</p>
-                <p className="mt-1 text-sm text-ink-muted">{s.v}</p>
-              </div>
-            ))}
+          <div className="overflow-hidden border border-line">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/graphics/microscope.png"
+              alt="Independent laboratory analysis"
+              className="w-full"
+            />
           </div>
+        </div>
+        <div className="container-site grid grid-cols-2 gap-px bg-line pb-20 lg:grid-cols-4">
+          {[
+            { k: "≥99%", v: "Typical purity" },
+            { k: "HPLC / MS", v: "Analytical methods" },
+            { k: "Per-lot", v: "Certificate of Analysis" },
+            { k: "-20°C", v: "Lyophilized storage" },
+          ].map((s) => (
+            <div key={s.v} className="bg-paper-soft p-8">
+              <p className="text-2xl font-bold">{s.k}</p>
+              <p className="mt-1 text-sm text-ink-muted">{s.v}</p>
+            </div>
+          ))}
         </div>
       </section>
 
