@@ -132,7 +132,7 @@ export default async function ProductPage({
 
       <div className="grid gap-12 lg:grid-cols-2">
         <div className="relative aspect-square border border-line">
-          <ProductImage imageKey={product.imageKey} name={product.name} className="h-full w-full" />
+          <ProductImage imageKey={product.imageKey} imageUrl={product.imageUrl} name={product.name} className="h-full w-full" />
           {product.purity && (
             <span className="badge absolute left-4 top-4 bg-ink text-paper">{product.purity}</span>
           )}
@@ -153,6 +153,7 @@ export default async function ProductPage({
               slug={product.slug}
               name={product.name}
               imageKey={product.imageKey}
+              imageUrl={product.imageUrl}
               variants={variants}
             />
           </div>
@@ -280,6 +281,7 @@ export default async function ProductPage({
           slug: product.slug,
           name: product.name,
           imageKey: product.imageKey,
+          imageUrl: product.imageUrl,
           category: product.category,
           fromPrice: minEffectivePrice(product.variants),
         }}

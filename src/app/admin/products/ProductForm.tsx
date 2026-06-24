@@ -60,6 +60,8 @@ export default function ProductForm({
   );
   const [coaUrl, setCoaUrl] = useState(product?.coaUrl ?? "");
   const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? "");
+  const [imageUploading, setImageUploading] = useState(false);
 
   async function uploadCoa(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -73,6 +75,21 @@ export default function ProductForm({
       if (data.url) setCoaUrl(data.url);
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.url) setImageUrl(data.url);
+    } finally {
+      setImageUploading(false);
     }
   }
 
@@ -104,6 +121,7 @@ export default function ProductForm({
         <p className="border border-ink bg-paper-muted px-4 py-3 text-sm">{state.error}</p>
       )}
       <input type="hidden" name="variants" value={variantsJson} />
+      <input type="hidden" name="imageUrl" value={imageUrl} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name" required>
@@ -126,7 +144,7 @@ export default function ProductForm({
             ))}
           </select>
         </Field>
-        <Field label="Image Style">
+        <Field label="Image Style (fallback illustration)">
           <select name="imageKey" className="input" defaultValue={product?.imageKey ?? "vial"}>
             {IMAGE_KEYS.map((k) => (
               <option key={k} value={k}>{k}</option>
@@ -134,6 +152,26 @@ export default function ProductForm({
           </select>
         </Field>
       </div>
+
+      <Field label="Product Photo (optional — overrides the illustration)">
+        <div className="flex items-center gap-3">
+          <input type="file" accept="image/*" onChange={uploadImage} className="text-xs" />
+          {imageUploading && <span className="text-xs text-ink-muted">Uploading…</span>}
+        </div>
+        {imageUrl && (
+          <div className="mt-2 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageUrl} alt="" className="h-16 w-16 border border-line object-cover" />
+            <button
+              type="button"
+              onClick={() => setImageUrl("")}
+              className="text-xs text-ink-muted underline hover:text-ink"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </Field>
 
       <Field label="Description" required>
         <textarea name="description" rows={3} className="input" defaultValue={product?.description} required />

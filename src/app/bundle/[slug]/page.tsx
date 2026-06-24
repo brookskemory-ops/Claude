@@ -39,6 +39,7 @@ export default async function BundlePage({ params }: { params: { slug: string } 
       variantLabel: v.label,
       sku: v.sku,
       imageKey: v.product.imageKey,
+      imageUrl: v.product.imageUrl,
       unitPrice: round2(base * (1 - disc / 100)),
       quantity: it.quantity,
       maxStock: v.stock,
@@ -93,6 +94,7 @@ export default async function BundlePage({ params }: { params: { slug: string } 
                   <div className="h-14 w-14 shrink-0 border border-line">
                     <ProductImage
                       imageKey={it.variant.product.imageKey}
+                      imageUrl={it.variant.product.imageUrl}
                       name={it.variant.product.name}
                       className="h-full w-full"
                     />

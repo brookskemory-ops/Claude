@@ -50,6 +50,7 @@ const productSchema = z.object({
   storage: z.string().optional().default(""),
   coaUrl: z.string().optional().default(""),
   imageKey: z.string().default("vial"),
+  imageUrl: z.string().optional().default(""),
   featured: z.boolean().default(false),
   active: z.boolean().default(true),
   variants: z.array(variantSchema).min(1, "Add at least one size/variant"),
@@ -77,6 +78,7 @@ function parseForm(formData: FormData) {
     storage: formData.get("storage") || "",
     coaUrl: formData.get("coaUrl") || "",
     imageKey: formData.get("imageKey") || "vial",
+    imageUrl: formData.get("imageUrl") || "",
     featured: formData.get("featured") === "on",
     active: formData.get("active") === "on",
     variants,
@@ -99,6 +101,7 @@ function productData(d: z.infer<typeof productSchema>) {
     storage: d.storage ?? "",
     coaUrl: d.coaUrl ?? "",
     imageKey: d.imageKey || "vial",
+    imageUrl: d.imageUrl ?? "",
     featured: d.featured,
     active: d.active,
   };

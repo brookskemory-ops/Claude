@@ -9,6 +9,7 @@ export type RecentItem = {
   slug: string;
   name: string;
   imageKey: string;
+  imageUrl?: string;
   category: string;
   fromPrice: number;
 };
@@ -49,6 +50,7 @@ export default function RecentlyViewed({ current }: { current: RecentItem }) {
             <div className="aspect-square overflow-hidden border border-line">
               <ProductImage
                 imageKey={p.imageKey}
+                imageUrl={p.imageUrl}
                 name={p.name}
                 className="h-full w-full transition-transform duration-500 group-hover:scale-105"
               />

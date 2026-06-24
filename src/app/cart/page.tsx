@@ -42,7 +42,7 @@ export default function CartPage() {
             {items.map((item) => (
               <li key={item.variantId} className="flex gap-5 py-6">
                 <Link href={`/product/${item.slug}`} className="h-28 w-28 shrink-0 border border-line">
-                  <ProductImage imageKey={item.imageKey} name={item.name} className="h-full w-full" />
+                  <ProductImage imageKey={item.imageKey} imageUrl={item.imageUrl} name={item.name} className="h-full w-full" />
                 </Link>
                 <div className="flex flex-1 flex-col">
                   <div className="flex justify-between gap-4">

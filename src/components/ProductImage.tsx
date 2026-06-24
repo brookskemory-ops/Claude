@@ -2,6 +2,7 @@ type Props = {
   imageKey: string;
   name: string;
   className?: string;
+  imageUrl?: string;
 };
 
 // Refined black & white research-vial illustrations with a clinical accent.
@@ -38,7 +39,11 @@ const SHAPES: Record<string, JSX.Element> = {
   default: <Vial />,
 };
 
-export default function ProductImage({ imageKey, name, className }: Props) {
+export default function ProductImage({ imageKey, name, className, imageUrl }: Props) {
+  if (imageUrl) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={imageUrl} alt={name} className={`object-cover ${className ?? ""}`} />;
+  }
   const shape = SHAPES[imageKey] ?? SHAPES.default;
   return (
     <svg

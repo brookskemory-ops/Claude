@@ -5,6 +5,7 @@ export type CartItem = {
   variantLabel: string; // e.g. "10mg"
   sku: string;
   imageKey: string;
+  imageUrl?: string;
   unitPrice: number;
   quantity: number;
   maxStock: number;

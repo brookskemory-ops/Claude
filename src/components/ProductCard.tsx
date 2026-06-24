@@ -28,6 +28,7 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
       >
         <ProductImage
           imageKey={product.imageKey}
+          imageUrl={product.imageUrl}
           name={product.name}
           className="h-full w-full transition-transform duration-500 group-hover:scale-105"
         />

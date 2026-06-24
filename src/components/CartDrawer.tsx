@@ -70,7 +70,7 @@ export default function CartDrawer({
                 {items.map((item) => (
                   <li key={item.variantId} className="flex gap-4 py-4">
                     <div className="h-20 w-20 shrink-0 border border-line">
-                      <ProductImage imageKey={item.imageKey} name={item.name} className="h-full w-full" />
+                      <ProductImage imageKey={item.imageKey} imageUrl={item.imageUrl} name={item.name} className="h-full w-full" />
                     </div>
                     <div className="flex flex-1 flex-col">
                       <div className="flex justify-between gap-2">

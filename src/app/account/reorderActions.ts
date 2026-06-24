@@ -40,6 +40,7 @@ export async function getReorderItems(
       variantLabel: v.label,
       sku: v.sku,
       imageKey: v.product.imageKey,
+      imageUrl: v.product.imageUrl,
       unitPrice: effectivePrice(v),
       quantity: Math.min(it.quantity, v.stock),
       maxStock: v.stock,

@@ -87,6 +87,7 @@ model Product {
   featured  Boolean          @default(false)
   active    Boolean          @default(true)
   imageKey  String           @default("default")
+  imageUrl  String           @default("") // uploaded product photo; falls back to imageKey illustration
   variants  ProductVariant[]
   reviews   Review[]
   createdAt DateTime         @default(now())

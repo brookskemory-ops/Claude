@@ -31,11 +31,13 @@ export default function ProductPurchase({
   slug,
   name,
   imageKey,
+  imageUrl,
   variants,
 }: {
   slug: string;
   name: string;
   imageKey: string;
+  imageUrl?: string;
   variants: PurchaseVariant[];
 }) {
   const { addItem } = useCart();
@@ -66,6 +68,7 @@ export default function ProductPurchase({
         variantLabel: selected.label,
         sku: selected.sku,
         imageKey,
+        imageUrl,
         unitPrice: basePrice,
         maxStock: selected.stock,
       },
