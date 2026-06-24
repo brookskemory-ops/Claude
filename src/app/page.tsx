@@ -182,14 +182,25 @@ export default async function HomePage() {
       </section>
 
       {/* Compliance callout */}
-      <section className="container-site py-20">
-        <div className="border border-ink p-10 text-center">
+      <section className="relative overflow-hidden bg-ink text-paper">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/graphics/molecule-wide.png"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30"
+        />
+        <div className="absolute inset-0 bg-ink/40" />
+        <div className="container-site relative py-20 text-center">
           <h2 className="text-2xl font-bold tracking-tight">For research professionals</h2>
-          <p className="mx-auto mt-3 max-w-xl text-ink-muted">
+          <p className="mx-auto mt-3 max-w-xl text-paper/70">
             Axevia products are sold strictly for laboratory and in-vitro research. By purchasing,
             you confirm you are a qualified researcher and agree to our Research-Use-Only terms.
           </p>
-          <Link href="/research-use-policy" className="btn-outline mt-7">
+          <Link
+            href="/research-use-policy"
+            className="mt-7 inline-block border border-paper/40 px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-paper hover:text-ink"
+          >
             Research-Use Policy
           </Link>
         </div>

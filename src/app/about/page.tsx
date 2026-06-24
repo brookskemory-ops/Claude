@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LogoMonogram } from "@/components/Logo";
 
 export const metadata: Metadata = { title: "About & Quality" };
 
@@ -21,8 +20,13 @@ export default function AboutPage() {
       </section>
 
       <section className="container-site grid items-center gap-12 py-20 lg:grid-cols-2">
-        <div className="flex aspect-[4/3] items-center justify-center border border-line">
-          <LogoMonogram size={140} />
+        <div className="overflow-hidden border border-line">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/graphics/chromatogram.png"
+            alt="HPLC and mass-spectrometry analysis"
+            className="w-full"
+          />
         </div>
         <div>
           <p className="eyebrow">Quality Standards</p>
@@ -57,6 +61,12 @@ export default function AboutPage() {
       </section>
 
       <section className="container-site py-20 text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/graphics/emblem-peptide.png"
+          alt="Axevia peptide research"
+          className="mx-auto mb-6 h-40 w-auto object-contain"
+        />
         <h2 className="text-3xl font-bold tracking-tight">For research professionals.</h2>
         <p className="mx-auto mt-3 max-w-xl text-ink-muted">
           Axevia products are for laboratory research use only — not for human or veterinary use.
