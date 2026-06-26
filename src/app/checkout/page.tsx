@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { stripeEnabled } from "@/lib/stripe";
 import { paypalEnabled } from "@/lib/paypal";
 import { authnetEnabled } from "@/lib/authorizenet";
+import { getSiteConfig } from "@/lib/config";
 import CheckoutForm from "./CheckoutForm";
 
 export const metadata: Metadata = { title: "Checkout" };
@@ -13,6 +14,7 @@ export default async function CheckoutPage() {
   let defaultEmail = "";
   let defaultAddress = null;
   let pointsBalance = 0;
+  const { launchDiscountPercent } = await getSiteConfig();
 
   if (session) {
     defaultEmail = session.email;
@@ -44,6 +46,7 @@ export default async function CheckoutPage() {
       defaultEmail={defaultEmail}
       defaultAddress={defaultAddress}
       pointsBalance={pointsBalance}
+      launchDiscountPercent={launchDiscountPercent}
       stripeEnabled={stripeEnabled}
       paypalEnabled={paypalEnabled}
       authnetEnabled={authnetEnabled}

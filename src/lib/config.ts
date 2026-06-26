@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 export type SiteConfig = {
   maintenanceMode: boolean;
   maintenanceCode: string;
+  promoText: string;
+  launchDiscountPercent: number;
 };
 
 // Cached read of the singleton site config (invalidated via the "site-config" tag
@@ -15,6 +17,8 @@ export const getSiteConfig = unstable_cache(
     return {
       maintenanceMode: row?.maintenanceMode ?? false,
       maintenanceCode: row?.maintenanceCode ?? "",
+      promoText: row?.promoText ?? "",
+      launchDiscountPercent: row?.launchDiscountPercent ?? 0,
     };
   },
   ["site-config"],

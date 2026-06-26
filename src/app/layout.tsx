@@ -74,7 +74,7 @@ export default async function RootLayout({
                 <ReferralCapture />
               </Suspense>
               <AgeGate />
-              <Header session={session} />
+              <Header session={session} promo={config.promoText} />
               <main className="flex-1">{children}</main>
               <Footer />
               <CookieConsent />

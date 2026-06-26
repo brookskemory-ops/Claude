@@ -400,12 +400,18 @@ export async function updateMaintenance(formData: FormData) {
   await requireAdmin();
   const on = formData.get("maintenanceMode") === "on";
   const code = String(formData.get("maintenanceCode") || "");
+  const promoText = String(formData.get("promoText") || "").trim();
+  const launchDiscountPercent = Math.max(
+    0,
+    Math.min(90, Math.floor(Number(formData.get("launchDiscountPercent")) || 0)),
+  );
+  const data = { maintenanceMode: on, maintenanceCode: code, promoText, launchDiscountPercent };
   await db.siteConfig.upsert({
     where: { id: "singleton" },
-    create: { id: "singleton", maintenanceMode: on, maintenanceCode: code },
-    update: { maintenanceMode: on, maintenanceCode: code },
+    create: { id: "singleton", ...data },
+    update: data,
   });
-  await logAudit("maintenance", on ? "enabled" : "disabled");
+  await logAudit("settings", `maintenance=${on} promo=${promoText ? "on" : "off"} launch=${launchDiscountPercent}%`);
   revalidateTag("site-config");
   revalidatePath("/admin/settings");
 }

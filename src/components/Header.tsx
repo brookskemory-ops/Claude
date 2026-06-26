@@ -31,8 +31,10 @@ const NAV: NavItem[] = [
 
 export default function Header({
   session,
+  promo,
 }: {
   session: SessionPayload | null;
+  promo?: string;
 }) {
   const { itemCount } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
@@ -41,6 +43,11 @@ export default function Header({
 
   return (
     <>
+      {promo && (
+        <div className="bg-paper px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-ink border-b border-line">
+          {promo}
+        </div>
+      )}
       <div className="bg-ink px-4 py-1.5 text-center text-[10px] uppercase tracking-[0.18em] text-paper/80">
         Research Use Only — not for human or veterinary consumption
       </div>

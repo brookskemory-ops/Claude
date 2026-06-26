@@ -38,7 +38,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Do you offer volume or bulk discounts?",
-    a: "Yes — buy 2 of a product to save 5%, or 3 or more to save 10%. The discount is applied automatically per product in your cart and at checkout.",
+    a: "Yes — buy 2 of a product to save 5%, 3 to save 10%, or 5 or more to save 15%. The discount is applied automatically per product in your cart and at checkout.",
   },
   {
     q: "How do loyalty points work?",

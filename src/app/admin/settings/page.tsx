@@ -5,6 +5,8 @@ export default async function AdminSettings() {
   const config = await db.siteConfig.findUnique({ where: { id: "singleton" } });
   const on = config?.maintenanceMode ?? false;
   const code = config?.maintenanceCode ?? "";
+  const promoText = config?.promoText ?? "";
+  const launchPct = config?.launchDiscountPercent ?? 0;
 
   return (
     <div className="max-w-xl">
@@ -40,6 +42,35 @@ export default async function AdminSettings() {
           />
           <p className="mt-1 text-xs text-ink-muted">
             Share this code; entering it at the coming-soon page grants access for 30 days.
+          </p>
+        </div>
+
+        <div className="border-t border-line pt-5">
+          <label className="label">Promo banner text (leave blank to hide the banner)</label>
+          <input
+            name="promoText"
+            className="input"
+            defaultValue={promoText}
+            placeholder="e.g. Launch offer — 20% off, applied automatically at checkout"
+          />
+        </div>
+
+        <div>
+          <label className="label">Launch discount % (0 = off; applied automatically at checkout)</label>
+          <input
+            name="launchDiscountPercent"
+            type="number"
+            min="0"
+            max="90"
+            className="input w-32"
+            defaultValue={launchPct}
+          />
+          <p className="mt-1 text-xs text-ink-muted">
+            Currently{" "}
+            <span className={launchPct > 0 ? "font-semibold text-ink" : ""}>
+              {launchPct > 0 ? `${launchPct}% off all orders` : "off"}
+            </span>
+            . Stacks with volume and coupon discounts.
           </p>
         </div>
 

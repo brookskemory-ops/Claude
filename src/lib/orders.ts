@@ -22,6 +22,7 @@ import {
 } from "@/lib/email";
 import { createUniqueCoupon, REFERRER_AMOUNT_OFF } from "@/lib/referral";
 import { processBackInStock } from "@/lib/stock";
+import { getSiteConfig } from "@/lib/config";
 import { formatPrice } from "@/lib/format";
 import { stripe } from "@/lib/stripe";
 import { paypalRefund } from "@/lib/paypal";
@@ -134,6 +135,14 @@ export async function createPendingOrder(
       couponCode = coupon.code;
     }
   }
+
+  // Site-wide launch discount (auto-applied for everyone; stacks with coupon + volume break).
+  const siteConfig = await getSiteConfig();
+  if (siteConfig.launchDiscountPercent > 0) {
+    discount = round2(discount + (subtotal * siteConfig.launchDiscountPercent) / 100);
+  }
+  // Never discount more than the merchandise subtotal.
+  if (discount > subtotal) discount = subtotal;
 
   // Loyalty redemption (signed-in users): redeem in whole 100-point blocks worth $5 each,
   // capped by the user's balance and the merchandise remaining after any coupon.

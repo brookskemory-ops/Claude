@@ -61,6 +61,7 @@ export default function CheckoutForm({
   defaultEmail,
   defaultAddress,
   pointsBalance,
+  launchDiscountPercent,
   stripeEnabled,
   paypalEnabled,
   authnetEnabled,
@@ -70,6 +71,7 @@ export default function CheckoutForm({
   defaultEmail: string;
   defaultAddress: Address | null;
   pointsBalance: number;
+  launchDiscountPercent: number;
   stripeEnabled: boolean;
   paypalEnabled: boolean;
   authnetEnabled: boolean;
@@ -108,14 +110,16 @@ export default function CheckoutForm({
   const [redeemBlocks, setRedeemBlocks] = useState(0);
 
   const couponDiscount = coupon?.discount ?? 0;
+  const launchDiscount = round2((subtotal * launchDiscountPercent) / 100);
+  const prePointsDiscount = round2(Math.min(couponDiscount + launchDiscount, subtotal));
   const availableBlocks = Math.floor(pointsBalance / 100);
-  const maxBlocksByOrder = Math.max(0, Math.floor(round2(subtotal - couponDiscount) / 5));
+  const maxBlocksByOrder = Math.max(0, Math.floor(round2(subtotal - prePointsDiscount) / 5));
   const maxBlocks = Math.min(availableBlocks, maxBlocksByOrder);
   const effectiveBlocks = Math.min(redeemBlocks, maxBlocks);
   const pointsDiscount = effectiveBlocks * 5;
   const redeemPoints = effectiveBlocks * 100;
 
-  const discount = round2(couponDiscount + pointsDiscount);
+  const discount = round2(prePointsDiscount + pointsDiscount);
   const discounted = Math.max(0, round2(subtotal - discount));
   const shipCost = shippingFor(discounted);
   const total = round2(discounted + shipCost + tax);
@@ -419,6 +423,7 @@ export default function CheckoutForm({
 
           <dl className="mt-5 space-y-3 border-t border-line pt-5 text-sm">
             <Row label="Subtotal" value={formatPrice(subtotal)} />
+            {launchDiscount > 0 && <Row label={`Launch discount (${launchDiscountPercent}%)`} value={`−${formatPrice(launchDiscount)}`} />}
             {couponDiscount > 0 && <Row label={`Discount (${coupon?.code})`} value={`−${formatPrice(couponDiscount)}`} />}
             {pointsDiscount > 0 && <Row label={`Points (${redeemPoints})`} value={`−${formatPrice(pointsDiscount)}`} />}
             <Row label="Shipping" value={shipCost === 0 ? "Free" : formatPrice(shipCost)} />
