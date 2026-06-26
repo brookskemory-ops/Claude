@@ -394,6 +394,25 @@ export async function toggleTaxExempt(formData: FormData) {
   revalidatePath("/admin/customers");
 }
 
+export async function setUserRole(formData: FormData) {
+  const admin = await requireAdmin();
+  const userId = String(formData.get("userId") || "");
+  const role = String(formData.get("role") || "");
+  if (!userId || (role !== "ADMIN" && role !== "CUSTOMER")) return;
+
+  if (role === "CUSTOMER") {
+    // Lockout guards: never demote yourself or the last remaining admin.
+    if (userId === admin.sub) return;
+    const adminCount = await db.user.count({ where: { role: "ADMIN" } });
+    if (adminCount <= 1) return;
+  }
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+  await db.user.update({ where: { id: userId }, data: { role } });
+  await logAudit("user.role", `${user.email} -> ${role}`);
+  revalidatePath("/admin/customers");
+}
+
 // ---- Site settings (maintenance mode) ----
 
 export async function updateMaintenance(formData: FormData) {
