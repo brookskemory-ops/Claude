@@ -3,10 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { createUniqueCoupon } from "@/lib/referral";
 import { sendPresaleWelcome, sendPresaleSignupNotice } from "@/lib/email";
-
-function siteUrl(req: NextRequest) {
-  return process.env.NEXT_PUBLIC_SITE_URL || req.nextUrl.origin;
-}
+import { siteUrl } from "@/lib/url";
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
@@ -31,12 +28,12 @@ export async function GET(req: NextRequest) {
         userId: user.id,
       });
       await db.user.update({ where: { id: user.id }, data: { presaleCode: code } });
-      await sendPresaleWelcome({ to: user.email, code, siteUrl: siteUrl(req) });
+      await sendPresaleWelcome({ to: user.email, code, siteUrl: siteUrl() });
       await sendPresaleSignupNotice({
         subscriberEmail: user.email,
         name: user.name,
         code,
-        siteUrl: siteUrl(req),
+        siteUrl: siteUrl(),
       });
       return NextResponse.redirect(new URL("/maintenance?verified=1", req.url));
     }

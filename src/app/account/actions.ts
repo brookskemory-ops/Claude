@@ -16,6 +16,7 @@ import {
 } from "@/lib/auth";
 import { sendPasswordReset, sendVerification } from "@/lib/email";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { siteUrl } from "@/lib/url";
 
 export type AuthResult = { ok: false; error: string } | { ok: true; message?: string };
 
@@ -23,10 +24,6 @@ function makeToken() {
   const raw = crypto.randomBytes(32).toString("hex");
   const hash = crypto.createHash("sha256").update(raw).digest("hex");
   return { raw, hash };
-}
-
-function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 }
 
 const loginSchema = z.object({

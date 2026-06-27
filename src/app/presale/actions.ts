@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
 import { sendVerification } from "@/lib/email";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { siteUrl } from "@/lib/url";
 
 export type PresaleState = { ok: boolean; error?: string } | null;
 
@@ -14,10 +15,6 @@ const schema = z.object({
   email: z.string().email("Valid email required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
-
-function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-}
 
 /**
  * Creates a pre-sale account (no site access while gated) and sends a verification email.
