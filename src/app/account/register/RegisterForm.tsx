@@ -19,7 +19,7 @@ export default function RegisterForm() {
   return (
     <form action={formAction} className="mt-8 space-y-4">
       {state && !state.ok && (
-        <p className="border border-ink bg-paper-muted px-4 py-2 text-sm">
+        <p className="rounded-lg border border-ink bg-paper-muted px-4 py-2 text-sm">
           {state.error}
         </p>
       )}

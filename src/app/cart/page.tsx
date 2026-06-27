@@ -41,7 +41,7 @@ export default function CartPage() {
           <ul className="divide-y divide-line border-y border-line">
             {items.map((item) => (
               <li key={item.variantId} className="flex gap-5 py-6">
-                <Link href={`/product/${item.slug}`} className="h-28 w-28 shrink-0 border border-line">
+                <Link href={`/product/${item.slug}`} className="h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-line">
                   <ProductImage imageKey={item.imageKey} imageUrl={item.imageUrl} name={item.name} className="h-full w-full" />
                 </Link>
                 <div className="flex flex-1 flex-col">
@@ -75,7 +75,7 @@ export default function CartPage() {
                     )}
                   </p>
                   <div className="mt-auto flex items-center justify-between pt-4">
-                    <div className="flex items-center border border-line">
+                    <div className="flex items-center overflow-hidden rounded-full border border-line">
                       <button onClick={() => updateQuantity(item.variantId, item.quantity - 1)} className="flex h-9 w-9 items-center justify-center hover:bg-paper-muted">
                         −
                       </button>
@@ -101,7 +101,7 @@ export default function CartPage() {
           </Link>
         </div>
 
-        <aside className="h-fit border border-line p-6">
+        <aside className="h-fit rounded-2xl border border-line p-6">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em]">Order Summary</h2>
           <dl className="mt-6 space-y-3 text-sm">
             <div className="flex justify-between">

@@ -234,7 +234,7 @@ export default function CheckoutForm({
       <div className="mt-8 flex flex-wrap items-center gap-y-2">
         {STEPS.map((label, i) => (
           <div key={label} className="flex items-center gap-2">
-            <div className={`flex h-7 w-7 items-center justify-center text-xs font-bold ${i <= step ? "bg-ink text-paper" : "bg-paper-muted text-ink-muted"}`}>
+            <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${i <= step ? "bg-ink text-paper" : "bg-paper-muted text-ink-muted"}`}>
               {i + 1}
             </div>
             <span className={`text-xs font-semibold uppercase tracking-[0.14em] ${i <= step ? "text-ink" : "text-ink-muted"}`}>
@@ -245,7 +245,7 @@ export default function CheckoutForm({
         ))}
       </div>
 
-      {error && <p className="mt-6 border border-ink bg-paper-muted px-4 py-3 text-sm">{error}</p>}
+      {error && <p className="mt-6 rounded-lg border border-ink bg-paper-muted px-4 py-3 text-sm">{error}</p>}
 
       <div className="mt-8 grid gap-12 lg:grid-cols-[1fr_360px]">
         <div>
@@ -340,7 +340,7 @@ export default function CheckoutForm({
                 </ul>
               </div>
 
-              <label className="flex items-start gap-3 border border-ink bg-paper-muted p-4 text-sm">
+              <label className="flex items-start gap-3 rounded-xl border border-ink bg-paper-muted p-4 text-sm">
                 <input type="checkbox" className="mt-0.5" checked={ruoAck} onChange={(e) => setRuoAck(e.target.checked)} />
                 <span>
                   I confirm I am a qualified researcher (21+) and that these products are purchased
@@ -375,7 +375,7 @@ export default function CheckoutForm({
           )}
         </div>
 
-        <aside className="h-fit border border-line p-6">
+        <aside className="h-fit rounded-2xl border border-line p-6">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em]">Order Summary</h2>
           <ul className="mt-5 space-y-3">
             {items.map((i) => (
@@ -461,7 +461,7 @@ function MethodRow({
 }) {
   const active = method === id;
   return (
-    <label className={`flex cursor-pointer items-start gap-3 border p-4 ${active ? "border-ink" : "border-line"}`}>
+    <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${active ? "border-ink bg-paper-muted" : "border-line hover:border-ink/40"}`}>
       <input type="radio" name="method" checked={active} onChange={() => setMethod(id)} className="mt-1" />
       <span>
         <span className="block text-sm font-medium">{title}</span>
@@ -534,7 +534,7 @@ function AddressSummary({ address }: { address: Address }) {
 
 function ReviewBlock({ title, onEdit, children }: { title: string; onEdit: () => void; children: React.ReactNode }) {
   return (
-    <div className="border border-line p-5">
+    <div className="rounded-xl border border-line p-5">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">{title}</h3>
         <button onClick={onEdit} className="text-xs text-ink-muted underline hover:text-ink">Edit</button>

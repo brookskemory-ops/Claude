@@ -54,14 +54,14 @@ export default function CartDrawer({
           <>
             <div className="flex-1 overflow-y-auto px-6 py-4">
               <div className="mb-4">
-                <p className={`px-3 py-2 text-center text-xs ${remaining > 0 ? "bg-paper-muted text-ink-muted" : "bg-ink text-paper"}`}>
+                <p className={`rounded-full px-3 py-2 text-center text-xs ${remaining > 0 ? "bg-paper-muted text-ink-muted" : "bg-ink text-paper"}`}>
                   {remaining > 0
                     ? `Add ${formatPrice(remaining)} more for free shipping.`
                     : "You've unlocked free shipping."}
                 </p>
-                <div className="mt-2 h-1 w-full bg-line">
+                <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-line">
                   <div
-                    className="h-1 bg-ink transition-all duration-300"
+                    className="h-1 rounded-full bg-ink transition-all duration-300"
                     style={{ width: `${Math.round(progress * 100)}%` }}
                   />
                 </div>
@@ -69,7 +69,7 @@ export default function CartDrawer({
               <ul className="divide-y divide-line">
                 {items.map((item) => (
                   <li key={item.variantId} className="flex gap-4 py-4">
-                    <div className="h-20 w-20 shrink-0 border border-line">
+                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-line">
                       <ProductImage imageKey={item.imageKey} imageUrl={item.imageUrl} name={item.name} className="h-full w-full" />
                     </div>
                     <div className="flex flex-1 flex-col">
@@ -150,7 +150,7 @@ function QtyButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="flex h-7 w-7 items-center justify-center border border-line text-sm hover:border-ink disabled:opacity-30"
+      className="flex h-7 w-7 items-center justify-center rounded-full border border-line text-sm hover:border-ink disabled:opacity-30"
     >
       {label}
     </button>

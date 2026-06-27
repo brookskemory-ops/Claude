@@ -8,7 +8,7 @@ export default function ContactForm() {
 
   if (state?.ok) {
     return (
-      <div className="flex flex-col justify-center border border-line p-8">
+      <div className="flex flex-col justify-center rounded-2xl border border-line p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.14em]">Message sent</p>
         <p className="mt-3 text-sm text-ink-muted">
           Thanks for reaching out — our team will get back to you within one business day.
@@ -18,9 +18,9 @@ export default function ContactForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-4 border border-line p-8">
+    <form action={formAction} className="space-y-4 rounded-2xl border border-line p-8">
       {state && !state.ok && (
-        <p className="border border-ink bg-paper-muted px-4 py-2 text-sm">{state.error}</p>
+        <p className="rounded-lg border border-ink bg-paper-muted px-4 py-2 text-sm">{state.error}</p>
       )}
       <div className="grid grid-cols-2 gap-4">
         <div>
