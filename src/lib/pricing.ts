@@ -33,11 +33,16 @@ export type Coupon = {
   amountOff: number | null;
   active: boolean;
   expiresAt: Date | string | null;
+  maxRedemptions?: number | null;
+  timesRedeemed?: number;
 };
 
 export function isCouponValid(coupon: Coupon): boolean {
   if (!coupon.active) return false;
   if (coupon.expiresAt && new Date(coupon.expiresAt).getTime() < Date.now()) {
+    return false;
+  }
+  if (coupon.maxRedemptions != null && (coupon.timesRedeemed ?? 0) >= coupon.maxRedemptions) {
     return false;
   }
   return true;

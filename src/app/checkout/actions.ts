@@ -45,6 +45,15 @@ export async function validateCoupon(code: string, subtotal: number) {
   if (!coupon || !isCouponValid(coupon)) {
     return { ok: false as const, message: "Invalid or expired code." };
   }
+  if (coupon.userId) {
+    const session = await getSession();
+    if (coupon.userId !== session?.sub) {
+      return {
+        ok: false as const,
+        message: "This code is linked to a specific account — sign in with that account to use it.",
+      };
+    }
+  }
   const discount = couponDiscount(coupon, subtotal);
   return {
     ok: true as const,

@@ -17,6 +17,8 @@ model User {
   points             Int                  @default(0) // loyalty points balance
   taxExempt          Boolean              @default(false)
   exemptionCertUrl   String?
+  source             String               @default("") // e.g. "presale" for pre-sale signups
+  presaleCode        String? // the one-time code minted at pre-sale signup
   referralCode       String?              @unique
   referralsMade      Referral[]           @relation("referrer")
   referralReceived   Referral?            @relation("referee")
@@ -146,22 +148,17 @@ model StockNotification {
   @@unique([variantId, email])
 }
 
-model Subscriber {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  source    String   @default("presale")
-  notified  Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
 model Coupon {
-  id         String    @id @default(cuid())
-  code       String    @unique
-  percentOff Int?
-  amountOff  Float?
-  active     Boolean   @default(true)
-  expiresAt  DateTime?
-  createdAt  DateTime  @default(now())
+  id             String    @id @default(cuid())
+  code           String    @unique
+  percentOff     Int?
+  amountOff      Float?
+  active         Boolean   @default(true)
+  expiresAt      DateTime?
+  maxRedemptions Int? // null = unlimited
+  timesRedeemed  Int       @default(0)
+  userId         String? // when set, the code is locked to this account
+  createdAt      DateTime  @default(now())
 }
 
 model Order {

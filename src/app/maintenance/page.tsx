@@ -9,7 +9,12 @@ export const metadata: Metadata = {
 export default function MaintenancePage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; verified?: string };
 }) {
-  return <PresaleLanding error={searchParams.error === "1"} />;
+  return (
+    <PresaleLanding
+      error={searchParams.error === "1"}
+      verified={searchParams.verified === "1"}
+    />
+  );
 }

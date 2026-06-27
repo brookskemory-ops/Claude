@@ -176,14 +176,33 @@ export async function sendPresaleWelcome(args: {
   siteUrl: string;
 }): Promise<boolean> {
   const body = `
-    <p>You're on the list. We'll email you the moment our research-peptide catalog goes live and stock is in.</p>
-    <p>As a pre-sale member, here's your bonus: use the code below at checkout for an <strong>extra 5% off</strong> — on top of the automatic 10% launch discount (<strong>15% total</strong>).</p>
+    <p>Your email is verified and your pre-sale account is all set. We'll email you the moment our research-peptide catalog goes live and stock is in.</p>
+    <p>Here's your bonus: sign in with <strong>this account</strong> at checkout and use the code below for an <strong>extra 5% off</strong> — on top of the automatic 10% launch discount (<strong>15% total</strong>).</p>
     <p style="font-size:22px;font-weight:700;letter-spacing:.18em;border:2px solid #0a0a0a;padding:14px 0;text-align:center;margin:20px 0">${args.code}</p>
-    <p style="font-size:13px;color:#737373">Research Use Only — not for human or veterinary use. You're receiving this because you signed up at ${args.siteUrl}.</p>`;
+    <p style="font-size:13px;color:#737373">This code is one-time use and tied to your account, so keep it to yourself. Research Use Only — not for human or veterinary use. You're receiving this because you signed up at ${args.siteUrl}.</p>`;
   return sendEmail({
     to: args.to,
-    subject: "You're on the Axevia pre-sale list — here's your 5% code",
-    html: layout("You're on the list", body),
+    subject: "Your Axevia pre-sale code is here",
+    html: layout("You're all set", body),
+  });
+}
+
+export async function sendPresaleSignupNotice(args: {
+  subscriberEmail: string;
+  name: string;
+  code: string;
+  siteUrl: string;
+}): Promise<boolean> {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const body = `
+    <p>A new pre-sale member just verified their email.</p>
+    <p style="font-size:15px"><strong>${esc(args.name)}</strong><br/>${esc(args.subscriberEmail)}</p>
+    <p>One-time code issued: <strong>${args.code}</strong> (5% off, locked to their account).</p>`;
+  return sendEmail({
+    to: process.env.CONTACT_INBOX || "support@axevia.co",
+    subject: `New pre-sale signup: ${args.subscriberEmail}`,
+    html: layout("New pre-sale signup", body),
   });
 }
 

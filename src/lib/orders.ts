@@ -130,7 +130,9 @@ export async function createPendingOrder(
     const coupon = await db.coupon.findUnique({
       where: { code: input.couponCode.trim().toUpperCase() },
     });
-    if (coupon && isCouponValid(coupon)) {
+    // Account-locked codes only apply for their owner (who must be signed in).
+    const ownerOk = !coupon?.userId || coupon.userId === input.userId;
+    if (coupon && isCouponValid(coupon) && ownerOk) {
       discount = couponDiscount(coupon, subtotal);
       couponCode = coupon.code;
     }
@@ -252,6 +254,13 @@ export async function finalizeOrder(
     });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not finalize order." };
+  }
+
+  // Count this redemption so one-time / limited codes can't be reused.
+  if (order.couponCode) {
+    await db.coupon
+      .update({ where: { code: order.couponCode }, data: { timesRedeemed: { increment: 1 } } })
+      .catch(() => {});
   }
 
   await sendOrderConfirmation({

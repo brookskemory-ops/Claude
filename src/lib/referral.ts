@@ -28,6 +28,8 @@ export async function createUniqueCoupon(opts: {
   prefix: string;
   percentOff?: number;
   amountOff?: number;
+  maxRedemptions?: number;
+  userId?: string;
 }): Promise<string> {
   let code = "";
   for (let i = 0; i < 6; i++) {
@@ -41,6 +43,8 @@ export async function createUniqueCoupon(opts: {
       percentOff: opts.percentOff ?? null,
       amountOff: opts.amountOff ?? null,
       active: true,
+      maxRedemptions: opts.maxRedemptions ?? null,
+      userId: opts.userId ?? null,
     },
   });
   return code;
