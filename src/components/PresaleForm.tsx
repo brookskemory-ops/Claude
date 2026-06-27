@@ -66,7 +66,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full bg-paper px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-ink transition-opacity hover:bg-paper/90 disabled:opacity-60"
+      className="w-full rounded-full bg-paper px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-ink transition-opacity hover:bg-paper/90 disabled:opacity-60"
     >
       {pending ? "Creating…" : "Create pre-sale account"}
     </button>

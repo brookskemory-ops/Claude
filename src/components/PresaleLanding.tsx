@@ -128,7 +128,7 @@ export default async function PresaleLanding({
             />
             <button
               type="submit"
-              className="shrink-0 bg-paper px-6 text-xs font-semibold uppercase tracking-[0.18em] text-ink hover:bg-paper/90"
+              className="shrink-0 rounded-full bg-paper px-6 text-xs font-semibold uppercase tracking-[0.18em] text-ink hover:bg-paper/90"
             >
               Enter
             </button>
