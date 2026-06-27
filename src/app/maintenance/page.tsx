@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import MaintenanceScreen from "@/components/MaintenanceScreen";
+import PresaleLanding from "@/components/PresaleLanding";
 
 export const metadata: Metadata = {
   title: "Launching Soon",
@@ -11,5 +11,5 @@ export default function MaintenancePage({
 }: {
   searchParams: { error?: string };
 }) {
-  return <MaintenanceScreen error={searchParams.error === "1"} />;
+  return <PresaleLanding error={searchParams.error === "1"} />;
 }

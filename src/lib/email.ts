@@ -170,6 +170,23 @@ export async function sendBackInStock(args: {
   });
 }
 
+export async function sendPresaleWelcome(args: {
+  to: string;
+  code: string;
+  siteUrl: string;
+}): Promise<boolean> {
+  const body = `
+    <p>You're on the list. We'll email you the moment our research-peptide catalog goes live and stock is in.</p>
+    <p>As a pre-sale member, here's your bonus: use the code below at checkout for an <strong>extra 5% off</strong> — on top of the automatic 10% launch discount (<strong>15% total</strong>).</p>
+    <p style="font-size:22px;font-weight:700;letter-spacing:.18em;border:2px solid #0a0a0a;padding:14px 0;text-align:center;margin:20px 0">${args.code}</p>
+    <p style="font-size:13px;color:#737373">Research Use Only — not for human or veterinary use. You're receiving this because you signed up at ${args.siteUrl}.</p>`;
+  return sendEmail({
+    to: args.to,
+    subject: "You're on the Axevia pre-sale list — here's your 5% code",
+    html: layout("You're on the list", body),
+  });
+}
+
 export async function sendVerification(args: {
   to: string;
   verifyUrl: string;

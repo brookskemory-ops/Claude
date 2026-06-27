@@ -146,6 +146,14 @@ model StockNotification {
   @@unique([variantId, email])
 }
 
+model Subscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("presale")
+  notified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
 model Coupon {
   id         String    @id @default(cuid())
   code       String    @unique

@@ -51,7 +51,7 @@ export default async function AdminSettings() {
             name="promoText"
             className="input"
             defaultValue={promoText}
-            placeholder="e.g. Launch offer — 20% off, applied automatically at checkout"
+            placeholder="e.g. Launch offer — 10% off, applied automatically at checkout"
           />
         </div>
 

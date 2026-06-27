@@ -8,7 +8,7 @@ import AgeGate from "@/components/AgeGate";
 import CookieConsent from "@/components/CookieConsent";
 import ReferralCapture from "@/components/ReferralCapture";
 import Analytics from "@/components/Analytics";
-import MaintenanceScreen from "@/components/MaintenanceScreen";
+import PresaleLanding from "@/components/PresaleLanding";
 import { getSession } from "@/lib/auth";
 import { getSiteConfig } from "@/lib/config";
 import { cookies, headers } from "next/headers";
@@ -52,7 +52,7 @@ export default async function RootLayout({
     <html lang="en">
       <body className="flex min-h-screen flex-col">
         {gated ? (
-          <MaintenanceScreen />
+          <PresaleLanding />
         ) : (
           <>
             <Analytics />
