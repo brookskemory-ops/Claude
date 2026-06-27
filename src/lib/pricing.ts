@@ -109,6 +109,12 @@ export function minEffectivePrice(variants: SalePricing[]): number {
   return Math.min(...variants.map(effectivePrice));
 }
 
+/** Lowest regular (non-sale) list price across a product's variants. */
+export function minRegularPrice(variants: { price: number }[]): number {
+  if (!variants.length) return 0;
+  return Math.min(...variants.map((v) => v.price));
+}
+
 export function anyOnSale(variants: SalePricing[]): boolean {
   return variants.some(isOnSale);
 }

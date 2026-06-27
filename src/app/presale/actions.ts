@@ -4,7 +4,7 @@ import crypto from "crypto";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
-import { sendVerification } from "@/lib/email";
+import { sendVerification, sendSuggestionNotice } from "@/lib/email";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { siteUrl } from "@/lib/url";
 
@@ -64,6 +64,44 @@ export async function registerPresale(
     data: { userId: user.id, tokenHash: hash, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24) },
   });
   await sendVerification({ to: email, verifyUrl: `${siteUrl()}/account/verify?token=${raw}` });
+
+  return { ok: true };
+}
+
+const suggestionSchema = z.object({
+  peptide: z.string().min(2, "Tell us which peptide").max(120),
+  email: z.union([z.string().email(), z.literal("")]).optional().default(""),
+});
+
+/** Records a visitor's request for a peptide not yet in the catalog and notifies the owner. */
+export async function submitSuggestion(
+  _prev: PresaleState,
+  formData: FormData,
+): Promise<PresaleState> {
+  const limit = rateLimit(`suggest:${clientIp()}`, 8, 60_000);
+  if (!limit.ok) return { ok: false, error: "Too many suggestions. Try again shortly." };
+
+  const parsed = suggestionSchema.safeParse({
+    peptide: String(formData.get("peptide") || "").trim(),
+    email: String(formData.get("email") || "").trim().toLowerCase(),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Please enter a peptide name." };
+  }
+
+  try {
+    await db.suggestion.create({
+      data: { peptide: parsed.data.peptide, email: parsed.data.email ?? "" },
+    });
+  } catch {
+    return { ok: false, error: "Couldn't save your suggestion — please try again." };
+  }
+
+  try {
+    await sendSuggestionNotice({ peptide: parsed.data.peptide, email: parsed.data.email ?? "" });
+  } catch {
+    // suggestion is already stored; notification is best-effort
+  }
 
   return { ok: true };
 }

@@ -206,6 +206,24 @@ export async function sendPresaleSignupNotice(args: {
   });
 }
 
+export async function sendSuggestionNotice(args: {
+  peptide: string;
+  email: string;
+}): Promise<boolean> {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const body = `
+    <p>A visitor suggested a peptide they'd like to see in the catalog:</p>
+    <p style="font-size:16px;font-weight:700">${esc(args.peptide)}</p>
+    ${args.email ? `<p style="font-size:13px;color:#737373">From: ${esc(args.email)}</p>` : ""}`;
+  return sendEmail({
+    to: process.env.CONTACT_INBOX || "support@axevia.co",
+    replyTo: args.email || undefined,
+    subject: `Peptide suggestion: ${args.peptide}`,
+    html: layout("New peptide suggestion", body),
+  });
+}
+
 export async function sendVerification(args: {
   to: string;
   verifyUrl: string;

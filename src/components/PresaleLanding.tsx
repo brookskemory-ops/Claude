@@ -1,8 +1,9 @@
 import { LogoMonogram } from "@/components/Logo";
 import PresaleForm from "@/components/PresaleForm";
+import SuggestionForm from "@/components/SuggestionForm";
 import { db } from "@/lib/db";
 import { getSiteConfig } from "@/lib/config";
-import { minEffectivePrice, round2 } from "@/lib/pricing";
+import { minRegularPrice, round2 } from "@/lib/pricing";
 import { formatPrice } from "@/lib/format";
 
 // Pre-sale landing shown while the site is gated. Visitors create an account (no site access) and
@@ -28,7 +29,8 @@ export default async function PresaleLanding({
   const memberPct = config.launchDiscountPercent + PRESALE_BONUS_PCT;
   const priced = products
     .map((p) => {
-      const base = minEffectivePrice(p.variants);
+      // Discount the regular list price (not any active sale price) so the 15% is off the real price.
+      const base = minRegularPrice(p.variants);
       return { name: p.name, base, member: round2(base * (1 - memberPct / 100)) };
     })
     .filter((p) => p.base > 0);
@@ -113,6 +115,18 @@ export default async function PresaleLanding({
             </p>
           </div>
         )}
+
+        {/* Suggest a peptide */}
+        <div className="mt-16 w-full max-w-lg">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-paper/60">
+            Don&apos;t see what you need?
+          </p>
+          <p className="mt-2 text-sm text-paper/60">
+            Tell us which peptide you&apos;d like us to carry — the most-requested ones get stocked
+            first.
+          </p>
+          <SuggestionForm />
+        </div>
 
         <details className="mt-20 w-full max-w-sm text-left">
           <summary className="cursor-pointer text-[11px] uppercase tracking-[0.18em] text-paper/40 hover:text-paper/70">

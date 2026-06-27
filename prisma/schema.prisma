@@ -148,6 +148,13 @@ model StockNotification {
   @@unique([variantId, email])
 }
 
+model Suggestion {
+  id        String   @id @default(cuid())
+  peptide   String
+  email     String   @default("")
+  createdAt DateTime @default(now())
+}
+
 model Coupon {
   id             String    @id @default(cuid())
   code           String    @unique
