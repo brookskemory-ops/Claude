@@ -52,7 +52,7 @@
   }
 
   .input {
-    @apply w-full border border-line bg-paper px-4 py-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-accent focus:outline-none;
+    @apply w-full rounded-lg border border-line bg-paper px-4 py-3 text-sm text-ink placeholder:text-ink-muted/60 focus:border-accent focus:outline-none;
   }
 
   .badge-accent {
@@ -71,11 +71,11 @@
   }
 
   .card {
-    @apply border border-line bg-paper;
+    @apply rounded-2xl border border-line bg-paper;
   }
 
   .badge {
-    @apply inline-flex items-center px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em];
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em];
   }
 }
 

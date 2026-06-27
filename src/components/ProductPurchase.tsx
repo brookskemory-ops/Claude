@@ -120,7 +120,7 @@ export default function ProductPurchase({
                 setSelectedId(v.id);
                 setQty(1);
               }}
-              className={`border px-4 py-2 text-sm transition-colors ${
+              className={`rounded-full border px-5 py-2 text-sm transition-colors ${
                 active
                   ? "border-ink bg-ink text-paper"
                   : "border-line hover:border-ink"
@@ -158,7 +158,7 @@ export default function ProductPurchase({
                 <button
                   key={t.min}
                   onClick={() => setQty(t.min)}
-                  className={`flex flex-col items-start border p-3 text-left transition-colors ${
+                  className={`flex flex-col items-start rounded-xl border p-3 text-left transition-colors ${
                     active ? "border-ink bg-ink text-paper" : "border-line hover:border-ink"
                   }`}
                 >
@@ -185,7 +185,7 @@ export default function ProductPurchase({
         <BackInStockForm key={selected.id} variantId={selected.id} />
       ) : (
         <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="flex items-center border border-line">
+          <div className="flex items-center overflow-hidden rounded-full border border-line">
             <button
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               className="flex h-12 w-12 items-center justify-center hover:bg-paper-muted"

@@ -24,7 +24,7 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
     <div className="group flex flex-col">
       <Link
         href={`/product/${product.slug}`}
-        className="relative block aspect-square overflow-hidden border border-line"
+        className="relative block aspect-square overflow-hidden rounded-2xl border border-line transition-shadow duration-300 group-hover:shadow-[0_8px_30px_rgba(10,10,10,0.08)]"
       >
         <ProductImage
           imageKey={product.imageKey}
@@ -59,7 +59,7 @@ export default function ProductCard({ product }: { product: ProductWithVariants 
           {variants.length > 1 ? ` · ${variants.length} sizes` : ""}
         </p>
         {product.coaUrl && (
-          <p className="mt-1.5 inline-flex w-fit items-center gap-1 border border-line px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+          <p className="mt-1.5 inline-flex w-fit items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
             COA included
           </p>
         )}

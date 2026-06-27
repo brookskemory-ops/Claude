@@ -92,7 +92,7 @@ export default async function ShopPage({
             name="q"
             defaultValue={q}
             placeholder="Search compounds…"
-            className="min-w-[200px] flex-1 border border-line bg-paper px-3 py-2 text-sm focus:border-ink focus:outline-none"
+            className="min-w-[200px] flex-1 rounded-full border border-line bg-paper px-4 py-2 text-sm focus:border-ink focus:outline-none"
           />
           <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
             <input type="checkbox" name="stock" value="1" defaultChecked={inStockOnly} />
@@ -105,7 +105,7 @@ export default async function ShopPage({
             <select
               name="sort"
               defaultValue={sort}
-              className="border border-line bg-paper px-3 py-2 text-xs focus:border-ink focus:outline-none"
+              className="rounded-full border border-line bg-paper px-4 py-2 text-xs focus:border-ink focus:outline-none"
             >
               <option value="featured">Featured</option>
               <option value="newest">Newest</option>

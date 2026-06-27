@@ -40,10 +40,10 @@ export default async function HomePage() {
               laboratories and research professionals. Every lot, fully documented.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link href="/shop" className="bg-paper px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:bg-paper/90">
+              <Link href="/shop" className="rounded-full bg-paper px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-ink transition-colors hover:bg-paper/90">
                 Browse Catalog
               </Link>
-              <Link href="/about" className="border border-paper/40 px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-paper hover:text-ink">
+              <Link href="/about" className="rounded-full border border-paper/40 px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-paper hover:text-ink">
                 Quality Standards
               </Link>
             </div>
@@ -52,7 +52,7 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="flex justify-center">
-            <div className="w-full max-w-md overflow-hidden border border-paper/20">
+            <div className="w-full max-w-md overflow-hidden rounded-2xl border border-paper/20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/graphics/vials.png"
@@ -100,13 +100,13 @@ export default async function HomePage() {
         <div className="container-site py-16">
           <p className="eyebrow">Browse</p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight">Shop by Category</h2>
-          <div className="mt-8 grid grid-cols-2 gap-px bg-line sm:grid-cols-3 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {CATEGORIES.map((cat) => (
               <Link
                 key={cat}
                 href={`/shop?category=${encodeURIComponent(cat)}`}
                 aria-label={cat}
-                className="group flex aspect-square items-center justify-center bg-paper p-4 transition-colors hover:bg-paper-muted"
+                className="group flex aspect-square items-center justify-center rounded-2xl border border-line bg-paper p-5 transition-all hover:border-ink/30 hover:bg-paper-muted hover:shadow-[0_8px_30px_rgba(10,10,10,0.06)]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -135,7 +135,7 @@ export default async function HomePage() {
           <img
             src="/graphics/peptide-architecture.png"
             alt="Figure 01 — peptide architecture: N-terminus, peptide bond, C-terminus"
-            className="w-full border border-line"
+            className="w-full rounded-2xl border border-line"
           />
         </div>
       </section>
@@ -157,7 +157,7 @@ export default async function HomePage() {
               Our Process
             </Link>
           </div>
-          <div className="overflow-hidden border border-line">
+          <div className="overflow-hidden rounded-2xl border border-line">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/graphics/microscope.png"
@@ -166,14 +166,14 @@ export default async function HomePage() {
             />
           </div>
         </div>
-        <div className="container-site grid grid-cols-2 gap-px bg-line pb-20 lg:grid-cols-4">
+        <div className="container-site grid grid-cols-2 gap-4 pb-20 lg:grid-cols-4">
           {[
             { k: "≥99%", v: "Typical purity" },
             { k: "HPLC / MS", v: "Analytical methods" },
             { k: "Per-lot", v: "Certificate of Analysis" },
             { k: "-20°C", v: "Lyophilized storage" },
           ].map((s) => (
-            <div key={s.v} className="bg-paper-soft p-8">
+            <div key={s.v} className="rounded-2xl border border-line bg-paper p-8">
               <p className="text-2xl font-bold">{s.k}</p>
               <p className="mt-1 text-sm text-ink-muted">{s.v}</p>
             </div>
@@ -199,7 +199,7 @@ export default async function HomePage() {
           </p>
           <Link
             href="/research-use-policy"
-            className="mt-7 inline-block border border-paper/40 px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-paper hover:text-ink"
+            className="mt-7 inline-block rounded-full border border-paper/40 px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] text-paper transition-colors hover:bg-paper hover:text-ink"
           >
             Research-Use Policy
           </Link>

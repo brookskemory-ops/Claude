@@ -38,13 +38,13 @@ export default function Footer() {
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-paper/50">
             Lab Updates
           </p>
-          <form className="flex border border-paper/30">
+          <form className="flex overflow-hidden rounded-full border border-paper/30">
             <input
               type="email"
               placeholder="Email address"
-              className="w-full bg-transparent px-3 py-2 text-sm text-paper placeholder:text-paper/40 focus:outline-none"
+              className="w-full bg-transparent px-4 py-2.5 text-sm text-paper placeholder:text-paper/40 focus:outline-none"
             />
-            <button type="submit" className="bg-paper px-4 text-xs font-semibold uppercase tracking-[0.14em] text-ink">
+            <button type="submit" className="bg-paper px-5 text-xs font-semibold uppercase tracking-[0.14em] text-ink hover:bg-paper/90">
               Join
             </button>
           </form>

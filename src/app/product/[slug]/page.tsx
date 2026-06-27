@@ -131,7 +131,7 @@ export default async function ProductPage({
       </nav>
 
       <div className="grid gap-12 lg:grid-cols-2">
-        <div className="relative aspect-square border border-line">
+        <div className="relative aspect-square overflow-hidden rounded-2xl border border-line">
           <ProductImage imageKey={product.imageKey} imageUrl={product.imageUrl} name={product.name} className="h-full w-full" />
           {product.purity && (
             <span className="badge absolute left-4 top-4 bg-ink text-paper">{product.purity}</span>
@@ -185,7 +185,7 @@ export default async function ProductPage({
             </div>
           </div>
 
-          <div className="mt-8 border border-ink bg-paper-muted p-4 text-xs leading-relaxed">
+          <div className="mt-8 rounded-xl border border-ink bg-paper-muted p-4 text-xs leading-relaxed">
             <p className="font-semibold uppercase tracking-[0.14em]">Research Use Only</p>
             <p className="mt-1 text-ink-muted">
               For laboratory research use only. Not a drug, food, or cosmetic. Not for human or
